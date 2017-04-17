@@ -1,0 +1,17 @@
+[BasicSettings]
+FileName: EXAMPLE.fasta
+
+[BlastSettings]
+MaximumSequences: 2000
+BlastEValue: 1e-3
+
+[AlignmentSettings]
+UseCompleteSequences: yes
+AlignmentIterations: 1
+MaximumRedundancyThreshold: 0.9
+ConsensusThreshold: 0.6
+
+[TroubleShooting]
+Logging: no
+KeepTempFiles: no
+
