@@ -1,8 +1,8 @@
 [BasicSettings]
-FileName: EXAMPLE.fasta
+FileName: Gc_hydrolase.fst
 
 [BlastSettings]
-MaximumSequences: 2000
+
 BlastEValue: 1e-3
 
 [AlignmentSettings]
