@@ -91,3 +91,4 @@ Try changing some of the Advanced Options. You could degrease the “Conversatio
 Why do I get so many suggested mutations?
 If you got more suggestions than you want to actually make, just use the suggestions from the top of the list. Since the mutations are sorted with the “best” (i.e. most conserved) suggestions at the top. You can also increase the “Conservation Threshold” or change the BLAST settings to change the number of  suggested mutations.
 
+Active Site Finder plugin
