@@ -73,19 +73,19 @@ CLUSTAL="./binaries/clustalo-1.2.0-Ubuntu-x86_64" #change this if another versio
 RUNBLAST = BLAST+' -db nr -query ./uploads/'+FILENAME+' -evalue '+BLASTEVALUE+' -max_target_seqs '+MAXIMUMSEQUENCES+' -outfmt "6 sacc sseq pident" -remote' 
 print "Begining BLAST search of NCBI. This will take a few minutes."
 start = time.time()
-#command = Command(RUNBLAST)
-#BLASTOUT=command.run(timeout=900)
+command = Command(RUNBLAST)
+BLASTOUT=command.run(timeout=900)
 
 #add instructions for timeout (i.e. try again w/ fewer sequences)
 
 #temporary data set to skip actual blast search
-
+'''
 BLASTOUT=[0,"""WP_083418319    PCPSFLIEHDRGLVLFDAGFDPRGLDDMAAYYPEISKALPMAGNRDLGIDRQLDGLGYRPSQISYVIPSHLHFDHAGGLYLFPDSTFLMGSGEMAFALQAHDKPQ---AGFFRVEDLLPTRHFDW--IETAHDFDLFGDGSVVLLFSPGHTPGSLALFVRLPNQ-NIILSGDVCHFPLEVDMGIIATSSFSPSYATF-ALRRLRMISKAWDARIWIQHEEDHWNEWPHAPE 26.840
 WP_073456977    PMPAYLIEHPKGLVLFDTMLVPDAADDPERVYGPLAEHLGLKYTREQRVDNQIKALGYRLEDVTHVIASHTHFDHSGGLYLFPHAKFYVGEGELRFAL--WPDPAGAGFFRQADIEA--TRSFNW--VQVGFDHDLFGDGSVVVLHTPGHTPGELSLLVRL-KSRNFILTGDTVHLRQALEDEIPMP---YDSNTELAIRSIRRLKLLRESADATVWITHDPEDWAEFQHAPYCY       29.362
 WP_049268273    ESYEIPVPWFLLTHPDGFTLIDGGLAVEGLKDPFAYWGGAVEQFKPVMPEEQGCL-EQLKRIGVAPEDIRYVILSHLHSDHTGAIGRFPHATHVVQRREYEYAFA--PDWFTSGAYCRYDYD---HPELNWFFLNGLSEDNYDLYGDGTLQCIFTPGHSPGHQSFLIRLSSGTNFTLAIDAAYTLDHYHERAL-PGLMTSATDVAQSVQKLRQLTERYNAILIPGHDPEEWEKIRLAPAWY 29.876
 WP_025778256    LAVPIPTFLIQHEGGLLVFDTGLATDAAGDPARAYGPLAEAFDMSFPPEARIDTQLESLGFSTSDVTDVVLSHMHFDHTGGLELFPTARGFIGEGEL-----AYSRSPRRLDAAMYREEDIAAAGQIDWLEIPQGVDHDIFGDGSVVVLSMPGHTHGTLSLKLSPPDHRTIILTSDAAHLQSNIDETTGMPLD-----VDTRNKERSLRRLRLLASQPNTTVWANHDPDHWKQFRR      27.966
 OCL02351        KLWLLHVGNLECDEAWFKRGGGTSTLSNPHPNRERRKLIMVSVLIEHPVEGLILFETGSGKDY--PE-IWGAPINDIFARVDYTEEQELDVQIKKTGHDIKDVKMVVIGHLHLDHAGGLEYFRNTGIPIYVHEKELKHAFYSVATKSDLGVY----LPHYLTFDLNW--VPFSGAFLEIAQGLN-LHHAPGHTPGLCILQVNMPKSGAWIFTTDMYHVSENFEESVPQGWLAREHDDWVRSNHMIHMLQRRTGARMVFGHCTKALEGLNMAPHAY       26.545"""]
-
+'''
 end = time.time()
 print 'BLAST search took '+str(int(end - start))+' seconds'
 
@@ -94,7 +94,7 @@ BLASTOUT=BLASTOUT[1].splitlines()
 for index in range(len(BLASTOUT[:])):
 	BLASTOUT[index]=BLASTOUT[index].split()
 VERSIONS = [item[0] for item in BLASTOUT]
-
+print 'BLAST returned'+str(len(VERSIONS))+' sequences.'
 #if USECOMPLETESEQUENCES:
 
 handle = Entrez.efetch(db="sequences", id=",".join(VERSIONS), retmax=MAXIMUMSEQUENCES, rettype="fasta", retmode="text")
@@ -110,6 +110,13 @@ command.run(timeout=900)
 end = time.time()
 print 'Removing redundant sequences took '+str(int(end - start))+' seconds'
 
+#add query sequence to list
+querry_sequences = [] # Setup an empty list
+querry_sequences.append(SeqIO.read('./uploads/'+FILENAME, "fasta"))
+for record in SeqIO.parse('./processing/cdhit.tmp', "fasta"):
+    querry_sequences.append(record)
+SeqIO.write(querry_sequences, './processing/cdhit.tmp', "fasta")
+
 RUNCLUSTAL = CLUSTAL+' --iter='+ALIGNMENTITERATIONS+' -i ./processing/cdhit.tmp  -o ./processing/clustal.tmp --outfmt=fa --force -v -v'  
 print RUNCLUSTAL
 print "Aligning sequences using Clustal Omega. This can take a few minutes"
@@ -119,19 +126,9 @@ command = Command(RUNCLUSTAL)
 command.run(timeout=900)
 end = time.time()
 print 'Aligning sequences took '+str(int(end - start))+' seconds'
-#CLUSTALOUT=CLUSTALOUT[1] #.splitlines()
-#print CLUSTALOUT
-#print CLUSTALOUT[0][0]
 
-#SEQS=( $(sed -r 's:>.+:break:g' ./processing/5CLUSTAL.out | sed ':a;N;$!ba;s/\n//g' | sed -r 's:break:\n:g')) #store array of sequences
-#for SEQ in "${SEQS[@]}"; do echo $SEQ; done > ./processing/6SEQSONLY.out #save sequences for troubleshooting
-trimmer('./processing/clustal.tmp')
-'''
-for seq_record in SeqIO.parse("./processing/clustal.tmp", "fasta"):
-    print(seq_record.id)
-    print(repr(seq_record.seq))
-    print(len(seq_record))
-'''
+trimmer('./processing/clustal.tmp', FILENAME, MAXIMUMREDUNDANCYTHRESHOLD)
+
 
 #trimmer('test')
 #cleanexit()
