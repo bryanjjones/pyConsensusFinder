@@ -6,7 +6,13 @@ import numpy as np # need numpy for arrays and the like
 import ConfigParser# need to read Config file
 import time
 from runbin import Command
+from trimmer import trimmer
 import os
+from Bio import SeqIO, Entrez
+Entrez.email = "bryanjjones@gmail.com"
+
+#make temporary processing directory
+#os.mkdir('./processing')
 
 def updatefromconfig(cat, opt):
 	if Config.has_option(cat, opt):
@@ -19,6 +25,20 @@ def updatebooleanconfig(cat, opt):
 	else:
 		return globals()[opt]
 
+def cleanexit():
+	if KEEPTEMPFILES:
+		print "Exiting due to failure"
+		print "Leaving temporary files"
+		sys.exit("Exiting due to failure")
+	else:
+		print 'Exiting due to failure'
+		print 'Deleting temporary files'
+		os.remove('./processing/'+FILENAME+'_all_sequences.tmp')
+		os.remove('./processing/cdhit.tmp')
+		os.remove('./processing/cdhit.tmp.clstr')
+		os.remove('./processing/clustal.tmp')
+		sys.exit("Exiting due to failure")
+		
 #read from the config file
 Config = ConfigParser.ConfigParser()
 Config.read("./config/default.cfg") #read defaults from here
@@ -30,7 +50,7 @@ FILENAME=Config.get('BasicSettings', 'filename')
 if not FILENAME:
 #	print FILENAME
 	print "No query file specified in CONFIGFILE. EXITING"
-	sys.exit(0)
+	sys.exit("No query file specified in CONFIGFILE. EXITING")
 
 #need to add a check to veriyf that file is protein sequence
 
@@ -51,22 +71,24 @@ CLUSTAL="./binaries/clustalo-1.2.0-Ubuntu-x86_64" #change this if another versio
 
 #Run Blast
 RUNBLAST = BLAST+' -db nr -query ./uploads/'+FILENAME+' -evalue '+BLASTEVALUE+' -max_target_seqs '+MAXIMUMSEQUENCES+' -outfmt "6 sacc sseq pident" -remote' 
-print RUNBLAST
-
+print "Begining BLAST search of NCBI. This will take a few minutes."
 start = time.time()
 #command = Command(RUNBLAST)
 #BLASTOUT=command.run(timeout=900)
 
 #add instructions for timeout (i.e. try again w/ fewer sequences)
 
+#temporary data set to skip actual blast search
+
 BLASTOUT=[0,"""WP_083418319    PCPSFLIEHDRGLVLFDAGFDPRGLDDMAAYYPEISKALPMAGNRDLGIDRQLDGLGYRPSQISYVIPSHLHFDHAGGLYLFPDSTFLMGSGEMAFALQAHDKPQ---AGFFRVEDLLPTRHFDW--IETAHDFDLFGDGSVVLLFSPGHTPGSLALFVRLPNQ-NIILSGDVCHFPLEVDMGIIATSSFSPSYATF-ALRRLRMISKAWDARIWIQHEEDHWNEWPHAPE 26.840
 WP_073456977    PMPAYLIEHPKGLVLFDTMLVPDAADDPERVYGPLAEHLGLKYTREQRVDNQIKALGYRLEDVTHVIASHTHFDHSGGLYLFPHAKFYVGEGELRFAL--WPDPAGAGFFRQADIEA--TRSFNW--VQVGFDHDLFGDGSVVVLHTPGHTPGELSLLVRL-KSRNFILTGDTVHLRQALEDEIPMP---YDSNTELAIRSIRRLKLLRESADATVWITHDPEDWAEFQHAPYCY       29.362
 WP_049268273    ESYEIPVPWFLLTHPDGFTLIDGGLAVEGLKDPFAYWGGAVEQFKPVMPEEQGCL-EQLKRIGVAPEDIRYVILSHLHSDHTGAIGRFPHATHVVQRREYEYAFA--PDWFTSGAYCRYDYD---HPELNWFFLNGLSEDNYDLYGDGTLQCIFTPGHSPGHQSFLIRLSSGTNFTLAIDAAYTLDHYHERAL-PGLMTSATDVAQSVQKLRQLTERYNAILIPGHDPEEWEKIRLAPAWY 29.876
 WP_025778256    LAVPIPTFLIQHEGGLLVFDTGLATDAAGDPARAYGPLAEAFDMSFPPEARIDTQLESLGFSTSDVTDVVLSHMHFDHTGGLELFPTARGFIGEGEL-----AYSRSPRRLDAAMYREEDIAAAGQIDWLEIPQGVDHDIFGDGSVVVLSMPGHTHGTLSLKLSPPDHRTIILTSDAAHLQSNIDETTGMPLD-----VDTRNKERSLRRLRLLASQPNTTVWANHDPDHWKQFRR      27.966
 OCL02351        KLWLLHVGNLECDEAWFKRGGGTSTLSNPHPNRERRKLIMVSVLIEHPVEGLILFETGSGKDY--PE-IWGAPINDIFARVDYTEEQELDVQIKKTGHDIKDVKMVVIGHLHLDHAGGLEYFRNTGIPIYVHEKELKHAFYSVATKSDLGVY----LPHYLTFDLNW--VPFSGAFLEIAQGLN-LHHAPGHTPGLCILQVNMPKSGAWIFTTDMYHVSENFEESVPQGWLAREHDDWVRSNHMIHMLQRRTGARMVFGHCTKALEGLNMAPHAY       26.545"""]
+
 end = time.time()
-print 'Time elapsed (seconds)'
-print(end - start)
+print 'BLAST search took '+str(int(end - start))+' seconds'
+
 #print 'BLAST Results'
 BLASTOUT=BLASTOUT[1].splitlines()
 for index in range(len(BLASTOUT[:])):
@@ -74,14 +96,43 @@ for index in range(len(BLASTOUT[:])):
 VERSIONS = [item[0] for item in BLASTOUT]
 
 #if USECOMPLETESEQUENCES:
-	
-#	curl -s  "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=protein&amp;id=${VERSIONS[i]}&amp;retmode=text&amp;rettype=fasta" | sed -r 's:'\>.+'::g' | sed ':a;N;$!ba;s/\n//g') 
 
-#SEQS=SEQS.split()
-#SEQS = []
-#np.asarray(SEQS)
-#print SEQS[0,1]
-#print SEQS[1,1]
-#	np.asarray(a)
+handle = Entrez.efetch(db="sequences", id=",".join(VERSIONS), retmax=MAXIMUMSEQUENCES, rettype="fasta", retmode="text")
 
+record = (handle.read()).splitlines()
+np.savetxt(('./processing/'+FILENAME+'_all_sequences.tmp'),record,delimiter="",fmt="%s") 
+
+RUNCDHIT = CDHIT+' -i ./processing/'+FILENAME+'_all_sequences.tmp -o ./processing/cdhit.tmp -c '+MAXIMUMREDUNDANCYTHRESHOLD+' -M 0 -T 0'  
+print "Removing redundant sequences using CD-HIT"
+start = time.time()
+command = Command(RUNCDHIT)
+command.run(timeout=900)
+end = time.time()
+print 'Removing redundant sequences took '+str(int(end - start))+' seconds'
+
+RUNCLUSTAL = CLUSTAL+' --iter='+ALIGNMENTITERATIONS+' -i ./processing/cdhit.tmp  -o ./processing/clustal.tmp --outfmt=fa --force -v -v'  
+print RUNCLUSTAL
+print "Aligning sequences using Clustal Omega. This can take a few minutes"
+start = time.time()
+command = Command(RUNCLUSTAL)
+#CLUSTALOUT=command.run(timeout=900)
+command.run(timeout=900)
+end = time.time()
+print 'Aligning sequences took '+str(int(end - start))+' seconds'
+#CLUSTALOUT=CLUSTALOUT[1] #.splitlines()
+#print CLUSTALOUT
+#print CLUSTALOUT[0][0]
+
+#SEQS=( $(sed -r 's:>.+:break:g' ./processing/5CLUSTAL.out | sed ':a;N;$!ba;s/\n//g' | sed -r 's:break:\n:g')) #store array of sequences
+#for SEQ in "${SEQS[@]}"; do echo $SEQ; done > ./processing/6SEQSONLY.out #save sequences for troubleshooting
+trimmer('./processing/clustal.tmp')
+'''
+for seq_record in SeqIO.parse("./processing/clustal.tmp", "fasta"):
+    print(seq_record.id)
+    print(repr(seq_record.seq))
+    print(len(seq_record))
+'''
+
+#trimmer('test')
+#cleanexit()
 # when complete sequences =1, curl BLASTOUT[1] VERSIONS (first entry on line), ideally replace existing sequences with curled (complete sequences)

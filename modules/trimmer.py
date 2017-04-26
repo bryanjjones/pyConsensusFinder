@@ -3,13 +3,32 @@
 import sys #need sys to use system variables
 import numpy as np # need numpy for arrays and the like
 import os # need os to be able to pull in variables like "SOURCE" and "THRESHOLD"
-SOURCE = "GFP.fst"
-THRESHOLD = float(0.6)
- 
+from Bio import SeqIO
+
 #SOURCE = os.environ['SOURCE'] #pull source file name for naming output files
 #THRESHOLD = float(os.environ['THRESHOLD']) #pull thershold as float for suggesting mutation to consensus from bash script
  
-REDUCED_MAX_SEQS = os.environ['REDUCED_MAX_SEQS'] #pull REDUCED_MAX_SEQS to know if the max sequences had to be reduced
+#REDUCED_MAX_SEQS = os.environ['REDUCED_MAX_SEQS'] #pull REDUCED_MAX_SEQS to know if the max sequences had to be reduced
+def trimmer(ALINGMENT):
+    
+    letters = len(next(SeqIO.parse(ALINGMENT, "fasta")))
+    entries=len(list(SeqIO.parse(ALINGMENT, "fasta")))
+    print str(letters)+' by '+str(entries)
+    AA = np.zeros((entries,letters), dtype=np.int)
+    print AA
+#    for seq_record in SeqIO.parse(ALINGMENT, "fasta"):
+#        x=str(seq_record.seq)
+#        print len(x)
+        #SEQS.append(str(seq_record.seq))
+#        for index in range(len(x)):
+#        	AASEQS[index]=BLASTOUT[index].split()
+        #AA=AA.append(repr(seq_record.seq))
+#    for index in range(len(AA[0])):
+#   	AA[]=BLASTOUT[index].split()
+#    print SEQS
+#    AA=np.fromstring(SEQS, delimiter=1, dtype=str)
+#    print AA
+'''
 VERSIONS = np.genfromtxt('./processing/7VERSION.out', dtype=str) #make a list to get GI numbers (initially contains sequences too)
 AA = np.genfromtxt('./processing/6SEQSONLY.out', delimiter=1, dtype=str)#make array from file with each AA as an element
 LENGTH = len(AA[0,:]) #how many positions do we need to look for gaps?
@@ -133,3 +152,5 @@ for index in range(len(CONSENSUS_SEQ[0,:])):
 CONSENSUS=">consensus_sequence",CONSENSUS # add header for FASTA format
 np.savetxt(('./completed/'+SOURCE+'_consensus.fst'),CONSENSUS,delimiter="",fmt="%s") #save file with AA sequence of consensus sequence
 np.savetxt(('./completed/'+SOURCE+'_mutations.txt'),SUGGESTED_MUTATIONS,delimiter=",",fmt="%s") #save file with suggested stabilizing mutations
+'''
+print 'reached end'
