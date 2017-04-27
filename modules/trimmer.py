@@ -11,7 +11,6 @@ def trimmer(ALINGMENT, NAME, THRESHOLD):
     LENGTH = len(next(SeqIO.parse(ALINGMENT, "fasta"))) #how many positions do we need to look for gaps and how big is the array?
     SEQUENCES = list(SeqIO.parse(ALINGMENT, "fasta"))
     entries=len(SEQUENCES)
-    print str(LENGTH)+' by '+str(entries)
     AA = np.zeros((entries,LENGTH), dtype=np.str) #make array from file with each AA as an element
     VERSIONS = np.zeros((entries), dtype="S30") #make a list to get VERSION numbers
 #    print AA
@@ -19,19 +18,18 @@ def trimmer(ALINGMENT, NAME, THRESHOLD):
     for i in range(entries):
         x=str(SEQUENCES[i].seq)
         y=str(SEQUENCES[i].id)
-        print "at position "+str(i)+" of VERSIONS, value "+str(y)+" added." 
         VERSIONS[(i)] = str(y)
         for position in range(len(x)):
             AA[i,position] = (x[position])
-#    print AA
-    print VERSIONS
-#	print(records[0].id)
     for index in range(len(AA[0,:])) : #make sure everything is upper case
         AA[0,index]=AA[0,index].upper()
+    print (''.join(AA[0,:]))
+    print
     for index in range(LENGTH):#at each position
         if AA[0,(LENGTH-1-index)] == "-":#LENGTH-1-index will start at the end, -1 to account for 0 based indexing, and find gaps
             AA=np.delete(AA, (LENGTH-1-index), 1)#delete the gaps
-            print ''.join(AA[0,:])#print the target sequence to show progress
+            sys.stdout.write("\033[K") #clear the line
+            sys.stdout.write('\r'+str((''.join(AA[0,:])))) #print the target sequence to show progress
     SEQS=[]
     for index in range(len(AA[:,0])): #alternate ">[GI number]" and sequences
         SEQS=np.hstack((SEQS,VERSIONS[(index)]))
@@ -125,10 +123,10 @@ def trimmer(ALINGMENT, NAME, THRESHOLD):
     MUTATIONS_ARRAY=np.array(MUTATIONS_ARRAY, dtype=TYPES)
     for index in range(len(FREQS[0,:])): #for each AA position
         CONSENSUS_SEQ[0,index] = IDS[np.argmax(COUNTS[:20,index]),0] #find the largest value, and get the corrisponding AA from IDS, and add it to CONSENSUS_SEQ
-        if THRESHOLD < max(FREQS[:20,index]): #if the consensus of a residue is greater than the threshold
+        if float(THRESHOLD) < max(FREQS[:20,index]): #if the consensus of a residue is greater than the threshold
             if IDS[np.argmax(FREQS[:20,index]),0] != AA[0,index]: #and the consens residue is different than the first sequence
                 print "Residue number " + str(int(index) + 1)
-                print str(int(100*max(FREQS[:20,index]))) + "% is greater than or equal to " + str(int(100*THRESHOLD)) + "%"
+                print str(int(100*max(FREQS[:20,index]))) + "% is greater than or equal to " + str(int(100*float(THRESHOLD))) + "%"
                 SUGGESTION=np.array([(AA[0,index], int(index + 1), CONSENSUS_SEQ[0,index], (-1*max(FREQS[:20,index])))], dtype=TYPES) #entry with negative frequency to allow easy sorting.
                 MUTATIONS_ARRAY = np.append(MUTATIONS_ARRAY,SUGGESTION, axis=0)#add new suggestion on to any existing "MUTATIONS_ARRAY"
     MUTATIONS_ARRAY=np.sort(MUTATIONS_ARRAY, order='freq')       
@@ -148,4 +146,4 @@ def trimmer(ALINGMENT, NAME, THRESHOLD):
     np.savetxt(('./completed/'+NAME+'_consensus.fst'),CONSENSUS,delimiter="",fmt="%s") #save file with AA sequence of consensus sequence
     np.savetxt(('./completed/'+NAME+'_mutations.txt'),SUGGESTED_MUTATIONS,delimiter=",",fmt="%s") #save file with suggested stabilizing mutations
 
-print 'reached end'
+    print 'Completed Trimming'

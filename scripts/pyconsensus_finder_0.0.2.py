@@ -9,51 +9,58 @@ from runbin import Command
 from trimmer import trimmer
 import os
 from Bio import SeqIO, Entrez
-Entrez.email = "bryanjjones@gmail.com"
 
-#make temporary processing directory
-#os.mkdir('./processing')
+def cleanexit(message): #function to exit cleanly by deleting any temporary files (unless indicated to save them)
+    if KEEPTEMPFILES:
+        print 'Leaving temporary files'
+    else:
+        print 'Deleting temporary files'
+        os.remove('./processing/'+FILENAME+'_all_sequences.tmp')
+        os.remove('./processing/cdhit.tmp')
+        os.remove('./processing/cdhit.tmp.clstr')
+        os.remove('./processing/clustal.tmp')
+    print 'Exiting'
+    sys.exit(message)
 
-def updatefromconfig(cat, opt):
-	if Config.has_option(cat, opt):
-		return Config.get(cat, opt)
-	else:
-		return globals()[opt]
-def updatebooleanconfig(cat, opt):
-	if Config.has_option(cat, opt):
-		return Config.getboolean(cat, opt)
-	else:
-		return globals()[opt]
+#location of binaries to call
+BLAST="./binaries/blastp" #change this if another version is installed locally
+CDHIT="./binaries/cd-hit" #change this if another version is installed locally
+CLUSTAL="./binaries/clustalo-1.2.0-Ubuntu-x86_64" #change this if another version is installed locally
 
-def cleanexit():
-	if KEEPTEMPFILES:
-		print "Exiting due to failure"
-		print "Leaving temporary files"
-		sys.exit("Exiting due to failure")
-	else:
-		print 'Exiting due to failure'
-		print 'Deleting temporary files'
-		os.remove('./processing/'+FILENAME+'_all_sequences.tmp')
-		os.remove('./processing/cdhit.tmp')
-		os.remove('./processing/cdhit.tmp.clstr')
-		os.remove('./processing/clustal.tmp')
-		sys.exit("Exiting due to failure")
-		
+programstart = time.time()
+# check directory structure
+dirs = filter(os.path.isdir, ['./config', './uploads', './processing', './completed', './modules']) #check for presence of directory structure
+if len(dirs) < 5:
+     cleanexit('Missing directories. Expected to find /config, /uploads, /processing, /completed, and /modules in the working directory.')
+bins = filter(os.path.isfile, [BLAST, CDHIT, CLUSTAL])
+if len(bins) < 3:
+     cleanexit('Missing binaries. Expected to find '+BLAST+', '+CDHIT+', and '+CLUSTAL+'.')
+#check for presence of config files
+if not os.path.isfile('./config/default.cfg'):
+    cleanexit('Defaults config file missing. Expected to find it at /config/default.cfg')
+if not os.path.isfile('./config/config.cfg'):
+    cleanexit('Config file missing. Expected to find it at /config/config.cfg')
 #read from the config file
 Config = ConfigParser.ConfigParser()
 Config.read("./config/default.cfg") #read defaults from here
 Config.read("./config/config.cfg") #overwrite defaults from here
 
-#need to add a check to verify that the config.cfg file is there, otherwise results in a KeyError
-
 FILENAME=Config.get('BasicSettings', 'filename')
 if not FILENAME:
-#	print FILENAME
-	print "No query file specified in CONFIGFILE. EXITING"
-	sys.exit("No query file specified in CONFIGFILE. EXITING")
-
-#need to add a check to veriyf that file is protein sequence
-
+    print "No query file specified in CONFIGFILE. EXITING"
+    sys.exit("No query file specified in CONFIGFILE. EXITING")
+if not 1 == (len(list(SeqIO.parse('./uploads/'+FILENAME, "fasta")))):
+    print "WARNING, MORE THAN ONE SEQUENCE FOUND IN "+FILENAME+". Proceding using only the first sequence."
+#check to verify the file is a protein sequence
+protonly = ('F','L','I','M','V','S','P','Y','H','Q','K','D','E','W','R')
+hasprotonly=0
+for letter in protonly:
+    if (next(SeqIO.parse('./uploads/'+FILENAME, "fasta"))).seq.count(letter):
+        hasprotonly=1
+if not hasprotonly:
+    print "WARNING, IT LOOKS LIKE YOUR SEQUENCE IS NOT PROTEIN. Consensus Finder works on protein sequences. Proceding anyway."
+#Get other variables from config.cfg file
+Entrez.email = Config.get('BasicSettings', 'Email')
 MAXIMUMSEQUENCES=Config.get('BlastSettings', 'MAXIMUMSEQUENCES')
 BLASTEVALUE=Config.get('BlastSettings', 'BLASTEVALUE')
 CONSENSUSTHRESHOLD=Config.get('AlignmentSettings', 'ConsensusThreshold')
@@ -63,20 +70,25 @@ MAXIMUMREDUNDANCYTHRESHOLD=Config.get('AlignmentSettings', 'MaximumRedundancyThr
 LOGGING=Config.getboolean('TroubleShooting', 'Logging')
 KEEPTEMPFILES=Config.getboolean('TroubleShooting', 'KeepTempFiles')
 
-#location of binaries to call
-BLAST="./binaries/blastp" #change this if another version is installed locally
-CDHIT="./binaries/cd-hit" #change this if another version is installed locally
-CLUSTAL="./binaries/clustalo-1.2.0-Ubuntu-x86_64" #change this if another version is installed locally
-
-
 #Run Blast
 RUNBLAST = BLAST+' -db nr -query ./uploads/'+FILENAME+' -evalue '+BLASTEVALUE+' -max_target_seqs '+MAXIMUMSEQUENCES+' -outfmt "6 sacc sseq pident" -remote' 
 print "Begining BLAST search of NCBI. This will take a few minutes."
 start = time.time()
+REDUCED_MAX_SEQS=0 #ticker to indicate if maximum sequences had to be reduced due to blast timeout
 command = Command(RUNBLAST)
-BLASTOUT=command.run(timeout=900)
-
-#add instructions for timeout (i.e. try again w/ fewer sequences)
+BLASTOUT=command.run(timeout=2000)
+if command.status == -15: #error code from Command indicating timeout
+    print'BLAST TOOK TOO LONG! Tring with 200 maximum sequences.'
+    RUNBLAST = BLAST+' -db nr -query ./uploads/'+FILENAME+' -evalue '+BLASTEVALUE+' -max_target_seqs 200 -outfmt "6 sacc sseq pident" -remote' #repeat blast search with only 200 max sequences
+    print "Begining BLAST search of NCBI. This will take a few minutes."
+    start = time.time()
+    REDUCED_MAX_SEQS=1 #ticker to indicate that we had to reduce the maximum sequences to get results
+    command = Command(RUNBLAST)
+    BLASTOUT=command.run(timeout=2000)
+    if command.status == -15: #error code from Command indicating timeout
+        cleanexit('BLAST STILL TOOK TOO LONG! Giving up.')
+if command.status != 0: #any other error code
+    cleanexit('BLAST FAILED. I do not know why, check your inputs, internet connection, etc.')
 
 #temporary data set to skip actual blast search
 '''
@@ -92,21 +104,31 @@ print 'BLAST search took '+str(int(end - start))+' seconds'
 #print 'BLAST Results'
 BLASTOUT=BLASTOUT[1].splitlines()
 for index in range(len(BLASTOUT[:])):
-	BLASTOUT[index]=BLASTOUT[index].split()
+    BLASTOUT[index]=BLASTOUT[index].split()
 VERSIONS = [item[0] for item in BLASTOUT]
-print 'BLAST returned'+str(len(VERSIONS))+' sequences.'
+print 'BLAST returned '+str(len(VERSIONS))+' sequences.'
+
 #if USECOMPLETESEQUENCES:
 
+start = time.time()
+print 'Downloading complete sequences from NCBI'
 handle = Entrez.efetch(db="sequences", id=",".join(VERSIONS), retmax=MAXIMUMSEQUENCES, rettype="fasta", retmode="text")
-
 record = (handle.read()).splitlines()
 np.savetxt(('./processing/'+FILENAME+'_all_sequences.tmp'),record,delimiter="",fmt="%s") 
+end = time.time()
+print 'Downloading sequences took '+str(int(end - start))+' seconds'
 
 RUNCDHIT = CDHIT+' -i ./processing/'+FILENAME+'_all_sequences.tmp -o ./processing/cdhit.tmp -c '+MAXIMUMREDUNDANCYTHRESHOLD+' -M 0 -T 0'  
 print "Removing redundant sequences using CD-HIT"
 start = time.time()
 command = Command(RUNCDHIT)
-command.run(timeout=900)
+#command.run(timeout=900)
+CDHITOUT=command.run(timeout=900)
+print CDHITOUT
+if command.status == -15: #error code for Command timeout
+    cleanexit('CDHIT TOOK TOO LONG! Try with fewer sequences.')
+elif command.status != 0: #any other error code
+    cleanexit('CDHIT FAILED. I do not know why, check your inputs.')
 end = time.time()
 print 'Removing redundant sequences took '+str(int(end - start))+' seconds'
 
@@ -117,19 +139,25 @@ for record in SeqIO.parse('./processing/cdhit.tmp', "fasta"):
     querry_sequences.append(record)
 SeqIO.write(querry_sequences, './processing/cdhit.tmp', "fasta")
 
+#Run clustal omega alingment
 RUNCLUSTAL = CLUSTAL+' --iter='+ALIGNMENTITERATIONS+' -i ./processing/cdhit.tmp  -o ./processing/clustal.tmp --outfmt=fa --force -v -v'  
-print RUNCLUSTAL
-print "Aligning sequences using Clustal Omega. This can take a few minutes"
+print "Aligning sequences using Clustal Omega. This can take a few minutes, espicially with many sequences"
 start = time.time()
 command = Command(RUNCLUSTAL)
-#CLUSTALOUT=command.run(timeout=900)
-command.run(timeout=900)
+CLUSTALOUT=command.run(timeout=7200)
+#command.run(timeout=900)
+print CLUSTALOUT
+if command.status == -15:
+    cleanexit('CLUSTAL TOOK TOO LONG! Try with fewer sequences.')
+elif command.status != 0:
+    cleanexit('CLUSTAL FAILED. I do not know why, check your inputs')
 end = time.time()
 print 'Aligning sequences took '+str(int(end - start))+' seconds'
 
-trimmer('./processing/clustal.tmp', FILENAME, MAXIMUMREDUNDANCYTHRESHOLD)
-
-
-#trimmer('test')
-#cleanexit()
+trimmer('./processing/clustal.tmp', FILENAME, CONSENSUSTHRESHOLD) #Trim alingment to query length, and write output files.
+programend = time.time()
+print 'Consensus Finder Completed.'
+print 'Your results are in the /completed/ directory.'
+print 'Process took '+str(int(programend - programstart))+' seconds'
+cleanexit(0)
 # when complete sequences =1, curl BLASTOUT[1] VERSIONS (first entry on line), ideally replace existing sequences with curled (complete sequences)

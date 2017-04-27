@@ -1,1 +1,13 @@
 These mutations may stabilize your protein since they differ from a consensus of over 50.0%
+Change S 66 to G (found in 89% of similar proteins)
+Change K 104 to G (found in 81% of similar proteins)
+Change T 246 to S (found in 81% of similar proteins)
+Change S 195 to P (found in 80% of similar proteins)
+Change S 259 to A (found in 72% of similar proteins)
+Change A 198 to T (found in 71% of similar proteins)
+Change M 14 to L (found in 66% of similar proteins)
+Change W 199 to P (found in 60% of similar proteins)
+Change T 277 to P (found in 57% of similar proteins)
+Change I 253 to L (found in 55% of similar proteins)
+Change A 40 to P (found in 52% of similar proteins)
+Change C 125 to G (found in 51% of similar proteins)
