@@ -13,6 +13,8 @@ def trimmer(ALINGMENT, NAME, THRESHOLD):
     entries=len(SEQUENCES)
     AA = np.zeros((entries,LENGTH), dtype=np.str) #make array from file with each AA as an element
     VERSIONS = np.zeros((entries), dtype="S30") #make a list to get VERSION numbers
+#    print AA
+#    print sequences[0].seq
     for i in range(entries):
         x=str(SEQUENCES[i].seq)
         y=str(SEQUENCES[i].id)
@@ -26,7 +28,8 @@ def trimmer(ALINGMENT, NAME, THRESHOLD):
     for index in range(LENGTH):#at each position
         if AA[0,(LENGTH-1-index)] == "-":#LENGTH-1-index will start at the end, -1 to account for 0 based indexing, and find gaps
             AA=np.delete(AA, (LENGTH-1-index), 1)#delete the gaps
-            print str((''.join(AA[0,:])))
+            sys.stdout.write("\033[K") #clear the line
+            sys.stdout.write('\r'+str((''.join(AA[0,:])))) #print the target sequence to show progress
     SEQS=[]
     for index in range(len(AA[:,0])): #alternate ">[GI number]" and sequences
         SEQS=np.hstack((SEQS,VERSIONS[(index)]))
