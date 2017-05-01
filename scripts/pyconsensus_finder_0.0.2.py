@@ -28,6 +28,8 @@ CDHIT="./binaries/cd-hit" #change this if another version is installed locally
 CLUSTAL="./binaries/clustalo-1.2.0-Ubuntu-x86_64" #change this if another version is installed locally
 
 programstart = time.time()
+warnings = []
+
 # check directory structure
 dirs = filter(os.path.isdir, ['./config', './uploads', './processing', './completed', './modules']) #check for presence of directory structure
 if len(dirs) < 5:
@@ -35,22 +37,33 @@ if len(dirs) < 5:
 bins = filter(os.path.isfile, [BLAST, CDHIT, CLUSTAL])
 if len(bins) < 3:
      cleanexit('Missing binaries. Expected to find '+BLAST+', '+CDHIT+', and '+CLUSTAL+'.')
+
 #check for presence of config files
 if not os.path.isfile('./config/default.cfg'):
     cleanexit('Defaults config file missing. Expected to find it at /config/default.cfg')
 if not os.path.isfile('./config/config.cfg'):
     cleanexit('Config file missing. Expected to find it at /config/config.cfg')
+
 #read from the config file
 Config = ConfigParser.ConfigParser()
+#need to check if user specified ratio and threshold
+Config.read("./config/config.cfg") 
+hasratio = Config.has_option('AlignmentSettings', 'ConsensusRatio')
+hasthreshold = Config.has_option('AlignmentSettings', 'ConsensusThreshold')
+
 Config.read("./config/default.cfg") #read defaults from here
 Config.read("./config/config.cfg") #overwrite defaults from here
 
+#get filename for query file and check if the file is valid.
 FILENAME=Config.get('BasicSettings', 'filename')
 if not FILENAME:
     print "No query file specified in CONFIGFILE. EXITING"
     sys.exit("No query file specified in CONFIGFILE. EXITING")
 if not 1 == (len(list(SeqIO.parse('./uploads/'+FILENAME, "fasta")))):
-    print "WARNING, MORE THAN ONE SEQUENCE FOUND IN "+FILENAME+". Proceding using only the first sequence."
+    message = "WARNING, MORE THAN ONE SEQUENCE FOUND IN "+FILENAME+". Using only the first sequence. "
+    print message
+    warnings.append(message)
+
 #check to verify the file is a protein sequence
 protonly = ('F','L','I','M','V','S','P','Y','H','Q','K','D','E','W','R')
 hasprotonly=0
@@ -58,48 +71,59 @@ for letter in protonly:
     if (next(SeqIO.parse('./uploads/'+FILENAME, "fasta"))).seq.count(letter):
         hasprotonly=1
 if not hasprotonly:
-    print "WARNING, IT LOOKS LIKE YOUR SEQUENCE IS NOT PROTEIN. Consensus Finder works on protein sequences. Proceding anyway."
+    message = "WARNING, IT LOOKS LIKE YOUR SEQUENCE IS NOT PROTEIN. Consensus Finder works on protein sequences. "
+    print message
+    warnings.append(message)
+    print "Attempting to procede anyway."
+
 #Get other variables from config.cfg file
 Entrez.email = Config.get('BasicSettings', 'Email')
-MAXIMUMSEQUENCES=Config.get('BlastSettings', 'MAXIMUMSEQUENCES')
-BLASTEVALUE=Config.get('BlastSettings', 'BLASTEVALUE')
-CONSENSUSTHRESHOLD=Config.get('AlignmentSettings', 'ConsensusThreshold')
-USECOMPLETESEQUENCES=Config.getboolean('AlignmentSettings', 'UseCompleteSequences')
-ALIGNMENTITERATIONS=Config.get('AlignmentSettings', 'AlignmentIterations')
-MAXIMUMREDUNDANCYTHRESHOLD=Config.get('AlignmentSettings', 'MaximumRedundancyThreshold')
-LOGGING=Config.getboolean('TroubleShooting', 'Logging')
-KEEPTEMPFILES=Config.getboolean('TroubleShooting', 'KeepTempFiles')
-RATIO=Config.get('AlignmentSettings', 'ConsensusRatio')
+MAXIMUMSEQUENCES = Config.get('BlastSettings', 'MAXIMUMSEQUENCES')
+BLASTEVALUE = Config.get('BlastSettings', 'BLASTEVALUE')
+CONSENSUSTHRESHOLD = (Config.getfloat('AlignmentSettings', 'ConsensusThreshold'))
+RATIO = (Config.getfloat('AlignmentSettings', 'ConsensusRatio'))
+USECOMPLETESEQUENCES = Config.getboolean('AlignmentSettings', 'UseCompleteSequences')
+ALIGNMENTITERATIONS = Config.get('AlignmentSettings', 'AlignmentIterations')
+MAXIMUMREDUNDANCYTHRESHOLD = Config.get('AlignmentSettings', 'MaximumRedundancyThreshold')
+LOGGING = Config.getboolean('TroubleShooting', 'Logging')
+KEEPTEMPFILES = Config.getboolean('TroubleShooting', 'KeepTempFiles')
+
+#if user specified threshold, but no ratio, don't use default ratio.
+#default ratio should only be used when user specified neither ratio nor thershold in config file
+if hasthreshold and not hasratio:
+    RATIO=None
 
 #Run Blast
 RUNBLAST = BLAST+' -db nr -query ./uploads/'+FILENAME+' -evalue '+BLASTEVALUE+' -max_target_seqs '+MAXIMUMSEQUENCES+' -outfmt "6 sacc sseq pident" -remote' 
 print "Begining BLAST search of NCBI. This will take a few minutes."
 start = time.time()
 REDUCED_MAX_SEQS=0 #ticker to indicate if maximum sequences had to be reduced due to blast timeout
-'''
+
 command = Command(RUNBLAST)
 BLASTOUT=command.run(timeout=2000)
 if command.status == -15: #error code from Command indicating timeout
-    print'BLAST TOOK TOO LONG! Tring with 200 maximum sequences.'
+    message = 'BLAST TOOK TOO LONG. Maximum sequences reduced to 200 BLAST results. '
+    print message
     RUNBLAST = BLAST+' -db nr -query ./uploads/'+FILENAME+' -evalue '+BLASTEVALUE+' -max_target_seqs 200 -outfmt "6 saccver sseq pident" -remote' #repeat blast search with only 200 max sequences
     print "Begining BLAST search of NCBI. This will take a few minutes."
     start = time.time()
     REDUCED_MAX_SEQS=1 #ticker to indicate that we had to reduce the maximum sequences to get results
+    warnings.append(message)
     command = Command(RUNBLAST)
     BLASTOUT=command.run(timeout=2000)
     if command.status == -15: #error code from Command indicating timeout
         cleanexit('BLAST STILL TOOK TOO LONG! Giving up.')
 if command.status != 0: #any other error code
     cleanexit('BLAST FAILED. I do not know why, check your inputs, internet connection, etc.')
-'''
-#temporary data set to skip actual blast search
 
+#temporary data set to skip actual blast search
+'''
 BLASTOUT=[0,"""WP_083418319    PCPSFLIEHDRGLVLFDAGFDPRGLDDMAAYYPEISKALPMAGNRDLGIDRQLDGLGYRPSQISYVIPSHLHFDHAGGLYLFPDSTFLMGSGEMAFALQAHDKPQ---AGFFRVEDLLPTRHFDW--IETAHDFDLFGDGSVVLLFSPGHTPGSLALFVRLPNQ-NIILSGDVCHFPLEVDMGIIATSSFSPSYATF-ALRRLRMISKAWDARIWIQHEEDHWNEWPHAPE 26.840
 WP_073456977    PMPAYLIEHPKGLVLFDTMLVPDAADDPERVYGPLAEHLGLKYTREQRVDNQIKALGYRLEDVTHVIASHTHFDHSGGLYLFPHAKFYVGEGELRFAL--WPDPAGAGFFRQADIEA--TRSFNW--VQVGFDHDLFGDGSVVVLHTPGHTPGELSLLVRL-KSRNFILTGDTVHLRQALEDEIPMP---YDSNTELAIRSIRRLKLLRESADATVWITHDPEDWAEFQHAPYCY       29.362
 WP_049268273    ESYEIPVPWFLLTHPDGFTLIDGGLAVEGLKDPFAYWGGAVEQFKPVMPEEQGCL-EQLKRIGVAPEDIRYVILSHLHSDHTGAIGRFPHATHVVQRREYEYAFA--PDWFTSGAYCRYDYD---HPELNWFFLNGLSEDNYDLYGDGTLQCIFTPGHSPGHQSFLIRLSSGTNFTLAIDAAYTLDHYHERAL-PGLMTSATDVAQSVQKLRQLTERYNAILIPGHDPEEWEKIRLAPAWY 29.876
 WP_025778256    LAVPIPTFLIQHEGGLLVFDTGLATDAAGDPARAYGPLAEAFDMSFPPEARIDTQLESLGFSTSDVTDVVLSHMHFDHTGGLELFPTARGFIGEGEL-----AYSRSPRRLDAAMYREEDIAAAGQIDWLEIPQGVDHDIFGDGSVVVLSMPGHTHGTLSLKLSPPDHRTIILTSDAAHLQSNIDETTGMPLD-----VDTRNKERSLRRLRLLASQPNTTVWANHDPDHWKQFRR      27.966
 OCL02351        KLWLLHVGNLECDEAWFKRGGGTSTLSNPHPNRERRKLIMVSVLIEHPVEGLILFETGSGKDY--PE-IWGAPINDIFARVDYTEEQELDVQIKKTGHDIKDVKMVVIGHLHLDHAGGLEYFRNTGIPIYVHEKELKHAFYSVATKSDLGVY----LPHYLTFDLNW--VPFSGAFLEIAQGLN-LHHAPGHTPGLCILQVNMPKSGAWIFTTDMYHVSENFEESVPQGWLAREHDDWVRSNHMIHMLQRRTGARMVFGHCTKALEGLNMAPHAY       26.545"""]
-
+'''
 end = time.time()
 print 'BLAST search took '+str(int(end - start))+' seconds'
 
@@ -159,16 +183,27 @@ elif command.status != 0:
 end = time.time()
 print 'Aligning sequences took '+str(int(end - start))+' seconds'
 
+#processing steps from analyze module.
 trimmed = analyze.trimmer('./processing/clustal.tmp',filename='./completed/'+FILENAME+'_trimmed_alignment.fst')
 counts = analyze.aacounts(trimmed, filename='./completed/'+FILENAME+'_counts.csv')
 freqs = analyze.aafrequencies(counts, filename='./completed/'+FILENAME+'_frequencies.csv')
 consensus = analyze.consensus(freqs, filename='./completed/'+FILENAME+'_consensus.fst')
-analyze.ratioconsensus(FREQS, THRESHOLD, filename='./completed/'+FILENAME+'_mutations.txt'):  
-#analyze.cutoffconsensus()
-#trimmer('./processing/clustal.tmp', FILENAME, CONSENSUSTHRESHOLD) #Trim alingment to query length, and write output files.
+if RATIO:
+    ratiomutations = analyze.ratioconsensus(trimmed[0], freqs, RATIO)
+if CONSENSUSTHRESHOLD:
+    thresholdmutations = analyze.cutoffconsensus(trimmed[0], freqs, CONSENSUSTHRESHOLD)
+mutations = np.append(ratiomutations, thresholdmutations)
+mutations, output = analyze.formatmutations(mutations)
+
+#Save output suggestions file with any warnings that have been added
+file = open('./completed/'+FILENAME+'_mutations.txt','wb')
+file.write(''.join(warnings)) # 's16\n')
+np.savetxt(file, output, delimiter=",", fmt='%s') 
 
 programend = time.time()
 print 'Consensus Finder Completed.'
 print 'Your results are in the /completed/ directory.'
+
+print ''.join(warnings)
 print 'Process took '+str(int(programend - programstart))+' seconds'
 cleanexit(0)
