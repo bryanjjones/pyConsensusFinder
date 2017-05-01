@@ -6,7 +6,8 @@ import numpy as np # need numpy for arrays and the like
 import ConfigParser# need to read Config file
 import time
 from runbin import Command
-from trimmer import trimmer
+import analyze
+#import trimmer
 import os
 from Bio import SeqIO, Entrez, SeqRecord, Seq
 
@@ -68,6 +69,7 @@ ALIGNMENTITERATIONS=Config.get('AlignmentSettings', 'AlignmentIterations')
 MAXIMUMREDUNDANCYTHRESHOLD=Config.get('AlignmentSettings', 'MaximumRedundancyThreshold')
 LOGGING=Config.getboolean('TroubleShooting', 'Logging')
 KEEPTEMPFILES=Config.getboolean('TroubleShooting', 'KeepTempFiles')
+RATIO=Config.get('AlignmentSettings', 'ConsensusRatio')
 
 #Run Blast
 RUNBLAST = BLAST+' -db nr -query ./uploads/'+FILENAME+' -evalue '+BLASTEVALUE+' -max_target_seqs '+MAXIMUMSEQUENCES+' -outfmt "6 sacc sseq pident" -remote' 
@@ -157,7 +159,14 @@ elif command.status != 0:
 end = time.time()
 print 'Aligning sequences took '+str(int(end - start))+' seconds'
 
-trimmer('./processing/clustal.tmp', FILENAME, CONSENSUSTHRESHOLD) #Trim alingment to query length, and write output files.
+trimmed = analyze.trimmer('./processing/clustal.tmp',filename='./completed/'+FILENAME+'_trimmed_alignment.fst')
+counts = analyze.aacounts(trimmed, filename='./completed/'+FILENAME+'_counts.csv')
+freqs = analyze.aafrequencies(counts, filename='./completed/'+FILENAME+'_frequencies.csv')
+consensus = analyze.consensus(freqs, filename='./completed/'+FILENAME+'_consensus.fst')
+analyze.ratioconsensus(FREQS, THRESHOLD, filename='./completed/'+FILENAME+'_mutations.txt'):  
+#analyze.cutoffconsensus()
+#trimmer('./processing/clustal.tmp', FILENAME, CONSENSUSTHRESHOLD) #Trim alingment to query length, and write output files.
+
 programend = time.time()
 print 'Consensus Finder Completed.'
 print 'Your results are in the /completed/ directory.'
