@@ -24,12 +24,12 @@ def trimmer(ALINGMENT, filename=None):
             AA[i,position] = (x[position])
     for index in range(len(AA[0,:])) : #make sure everything is upper case
         AA[0,index] = AA[0,index].upper()
-    print (''.join(AA[0,:]))
-    print
+    #print (''.join(AA[0,:]))
+    #print
     for index in range(LENGTH):#at each position
         if AA[0,(LENGTH-1-index)] == "-":#LENGTH-1-index will start at the end, -1 to account for 0 based indexing, and find gaps
             AA = np.delete(AA, (LENGTH-1-index), 1)#delete the gaps
-            print(str((''.join(AA[0,:])))) #print the target sequence to show progress
+            #print(str((''.join(AA[0,:])))) #print the target sequence to show progress
     for index in range(len(AA[:,0])): #alternate ">[GI number]" and sequences
         SEQUENCES[index].seq = Seq.Seq(''.join(AA[(index),:]))
     if filename:

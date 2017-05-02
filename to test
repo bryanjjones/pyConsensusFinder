@@ -1,6 +1,13 @@
 Try various settings: 
-ratio only, threshold only, both, neither
-check errors (timeouts)
+Xratio only, 
+Xthreshold only,  
+Xboth, 
+Xcheck neither 
+errors (timeouts)
 compare to online version
 add more anotation
 add message when no mutations suggested.
+move query file to completed when done
+in suggested mutations, report query AA frequency (espicially when using ratio)
+test code injections: enter strings in config.cfg
+
