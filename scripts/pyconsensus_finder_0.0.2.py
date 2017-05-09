@@ -225,7 +225,7 @@ mutations, output = analyze.formatmutations(mutations)
 
 #Save output suggestions file with any warnings that have been added
 file = open('./completed/'+FILENAME+'_mutations.txt','wb')
-file.write(''.join(warnings)) # 's16\n')
+file.write(''.join(warnings) + '\n')# 's16\n')
 np.savetxt(file, output, delimiter=",", fmt='%s') 
 
 programend = time.time()
