@@ -52,7 +52,7 @@ Config.read("./config/config.cfg")
 hasratio = Config.has_option('AlignmentSettings', 'ConsensusRatio')
 hasthreshold = Config.has_option('AlignmentSettings', 'ConsensusThreshold')
 
-Config.read("./config/default.cfg") #read defaults from here
+#Config.read("./config/default.cfg") #read defaults from here
 Config.read("./config/config.cfg") #overwrite defaults from here
 
 def get_with_default(Config,section,name,default):
@@ -109,8 +109,8 @@ if len(bins) < 3:
      cleanexit('Missing binaries. Expected to find '+BLAST+', '+CDHIT+', and '+CLUSTAL+'.')
 
 #check for presence of config files
-if not os.path.isfile('./config/default.cfg'):
-    cleanexit('Defaults config file missing. Expected to find it at /config/default.cfg')
+#if not os.path.isfile('./config/default.cfg'):
+#    cleanexit('Defaults config file missing. Expected to find it at /config/default.cfg')
 if not os.path.isfile('./config/config.cfg'):
     cleanexit('Config file missing. Expected to find it at /config/config.cfg')
 
@@ -121,7 +121,7 @@ start = time.time()
 REDUCED_MAX_SEQS=0 #ticker to indicate if maximum sequences had to be reduced due to blast timeout
 
 command = Command(RUNBLAST)
-BLASTOUT=command.run(timeout=2000)
+BLASTOUT=command.run(timeout=1800) #died by itself at 1884, succeeded at  1225 seconds
 if command.status == -15: #error code from Command indicating timeout
     message = 'BLAST TOOK TOO LONG. Maximum sequences reduced to 200 BLAST results. '
     print message
