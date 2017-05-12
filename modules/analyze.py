@@ -7,32 +7,35 @@ from Bio import SeqIO, Seq
 #Array of single letter amino acid cods for use in arrays. 
 IDS = np.zeros([22,1],dtype=object)
 IDS[:,0]=['G', 'P', 'A', 'V', 'L', 'I', 'M', 'C', 'F', 'Y', 'W', 'H', 'K', 'R', 'Q', 'N', 'E', 'D', 'S', 'T', '-', 'other']   
-TYPES = [('wt', 'S1'), ('res', int), ('sug', 'S1'),('freq', float)] #make a list of data types for suggested mutation tuples
+#make a list of data types for suggested mutation tuples
+TYPES = [('wt', 'S1'), ('res', int), ('sug', 'S1'),('freq', float),('wtfreq', float)] 
 
 #Given an alingment in fasta format,
 #Returns an array of sequences with each amino acid as an element.
 #With any gaps in the first sequence deleted from all sequences.
 def trimmer(ALINGMENT, filename=None):
-    
     LENGTH = len(next(SeqIO.parse(ALINGMENT, "fasta"))) #how many positions do we need to look for gaps and how big is the array?
-    SEQUENCES = list(SeqIO.parse(ALINGMENT, "fasta"))
-    entries = len(SEQUENCES)
-    AA = np.zeros((entries,LENGTH), dtype=np.str) #make array from file with each AA as an element
+    SEQUENCES = list(SeqIO.parse(ALINGMENT, "fasta")) 
+    entries = len(SEQUENCES) #how many sequences do we have
+
+    #make array from file with each AA as an element
+    AA = np.zeros((entries,LENGTH), dtype=np.str)
     for i in range(entries):
         x=str(SEQUENCES[i].seq)
         for position in range(len(x)):
             AA[i,position] = (x[position])
     for index in range(len(AA[0,:])) : #make sure everything is upper case
         AA[0,index] = AA[0,index].upper()
-    #print (''.join(AA[0,:]))
-    #print
+
+    # delete all positions that corrispond to gaps in the first sequence
     for index in range(LENGTH):#at each position
         if AA[0,(LENGTH-1-index)] == "-":#LENGTH-1-index will start at the end, -1 to account for 0 based indexing, and find gaps
             AA = np.delete(AA, (LENGTH-1-index), 1)#delete the gaps
-            #print(str((''.join(AA[0,:])))) #print the target sequence to show progress
-    for index in range(len(AA[:,0])): #alternate ">[GI number]" and sequences
-        SEQUENCES[index].seq = Seq.Seq(''.join(AA[(index),:]))
+
+    # if filename given, format array of amino acids as list of fasta formatted sequences and save
     if filename:
+        for index in range(len(AA[:,0])): #alternate ">[GI number]" and sequences
+            SEQUENCES[index].seq = Seq.Seq(''.join(AA[(index),:]))
         SeqIO.write(SEQUENCES, filename, "fasta")
     return AA
 
@@ -136,11 +139,14 @@ def ratioconsensus(query, FREQS, ratio):
             if (ratio * wtfreq) < consensusfreq: #if the consensus of a residue is greater than the threshold
                 print "Residue number " + str(int(index) + 1)
                 print str(int(100*consensusfreq)) + '% is at least ' + str(ratio) + ' times greater than ' + str(int(100*wtfreq)) + '%'
-                thissuggestion=np.array([(wtaa, (index + 1), consensus, consensusfreq)], dtype=TYPES) 
+                thissuggestion=np.array([(wtaa, (index + 1), consensus, consensusfreq, wtfreq)], dtype=TYPES) 
                 MUTATIONS_ARRAY = np.append(MUTATIONS_ARRAY,thissuggestion, axis=0)#add new suggestion on to any existing "MUTATIONS_ARRAY"
     return MUTATIONS_ARRAY
-'''
-'''
+
+#Returns a list of suggested amiono acid mutations when given a query sequence, 
+#frequency array, and cutoff for the consensus threshold. Will suggest mutations to consensus when query amino 
+#acids that differ from the consensus and the consensus is at least cutoff.
+#If given a filename, suggested mutations will be saved as txt file.
 def cutoffconsensus(query, FREQS, cutoff):    
     MUTATIONS_ARRAY=np.empty([0,])
     MUTATIONS_ARRAY=np.array(MUTATIONS_ARRAY, dtype=TYPES)
@@ -149,26 +155,15 @@ def cutoffconsensus(query, FREQS, cutoff):
         wtaa = query[index]
         consensus = IDS[np.argmax(FREQS[:20,index]),0]
         if wtaa != consensus: #cehck if the consens residue is different than the query sequence
+            wtfreq = float(FREQS[(aalist.index(wtaa)),index])
             consensusfreq = float(FREQS[(aalist.index(consensus)),index])
             if float(cutoff) < consensusfreq: #if the consensus of a residue is greater than the threshold
                 print "Residue number " + str(int(index) + 1)
                 print str(int(100*max(FREQS[:20,index]))) + "% is greater than or equal to " + str(int(100*float(cutoff))) + "%"
-                thissuggestion=np.array([(wtaa, (index + 1), consensus, consensusfreq)], dtype=TYPES) 
+                thissuggestion=np.array([(wtaa, (index + 1), consensus, consensusfreq, wtfreq)], dtype=TYPES) 
                 MUTATIONS_ARRAY = np.append(MUTATIONS_ARRAY,thissuggestion, axis=0)#add new suggestion on to any existing "MUTATIONS_ARRAY"
     return MUTATIONS_ARRAY
     
-    
-'''    
-    MUTATIONS_ARRAY=np.sort(MUTATIONS_ARRAY, order='freq')       
-    SUGGESTED_MUTATIONS=np.zeros([1],dtype=object)
-
-    SUGGESTED_MUTATIONS[0]="These mutations may stabilize your protein since they differ from a consensus of over " + str(100*float(THRESHOLD)) + "%"
-    for index in range(len(MUTATIONS_ARRAY[:,])): #for each suggested mutation
-        SUGGESTED_MUTATIONS = np.vstack((SUGGESTED_MUTATIONS,("Change " + MUTATIONS_ARRAY[index,]['wt'] + " " + str(MUTATIONS_ARRAY[index,]['res']) + " to " + MUTATIONS_ARRAY[index,]['sug'] + " (found in " + str(int(-100*MUTATIONS_ARRAY[index,]['freq'])) + "% of similar proteins)" ))) #add new suggestion on to any existing "SUGGESTED_MUTATIONS"
-    print SUGGESTED_MUTATIONS
-
-
-'''
 #Takes array of suggested mutations in TYPES format, sorts by % conserved, removes duplicates.
 #Returns modified mutations array in with TYPE data types, and human readable suggested mutations list.
 #If given filename, will save human readable suggested mutation list as text file.
@@ -177,8 +172,11 @@ def formatmutations(MUTATIONS_ARRAY, filename=None):
     MUTATIONS_ARRAY[::-1].sort(order = 'freq')
     SUGGESTED_MUTATIONS=np.zeros([1],dtype=object)
     SUGGESTED_MUTATIONS[0]="These mutations may stabilize your protein since they differ from the consensus residue"
-    for index in range(len(MUTATIONS_ARRAY[:,])): #for each suggested mutation
-        SUGGESTED_MUTATIONS = np.vstack((SUGGESTED_MUTATIONS,("Change " + MUTATIONS_ARRAY[index,]['wt'] + " " + str(MUTATIONS_ARRAY[index,]['res']) + " to " + MUTATIONS_ARRAY[index,]['sug'] + " (found in " + str(int(100*MUTATIONS_ARRAY[index,]['freq'])) + "% of similar proteins)" ))) #add new suggestion on to any existing "SUGGESTED_MUTATIONS"
+    if not len(MUTATIONS_ARRAY[:,]):
+            SUGGESTED_MUTATIONS[0]="No mutations found. Try reducing the ConsensusRatio or ConsensusThreshold in the config file. You could also try changing the BLAST parameters to adjust the number of sequences being returned (MaximumSequences and BlastEValue)."
+    else:
+        for index in range(len(MUTATIONS_ARRAY[:,])): #for each suggested mutation
+            SUGGESTED_MUTATIONS = np.vstack((SUGGESTED_MUTATIONS,("Change " + MUTATIONS_ARRAY[index,]['wt'] + " " + str(MUTATIONS_ARRAY[index,]['res']) + " to " + MUTATIONS_ARRAY[index,]['sug'] + " (" + str(int(100*MUTATIONS_ARRAY[index,]['freq'])) + "% of similar proteins have " + MUTATIONS_ARRAY[index,]['sug'] +", only " + str(int(100*MUTATIONS_ARRAY[index,]['wtfreq'])) + "% have "+ MUTATIONS_ARRAY[index,]['wt'] + ")" ))) #add new suggestion on to any existing "SUGGESTED_MUTATIONS"
     if filename:
         np.savetxt((filename),SUGGESTED_MUTATIONS,delimiter=",",fmt="%s") #save file with suggested stabilizing mutations
     return MUTATIONS_ARRAY, SUGGESTED_MUTATIONS
