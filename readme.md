@@ -29,14 +29,13 @@ In the list of results, check the box by the one you want.
 Click the “Send To” drop down menu, check file, and select format “FASTA”, and click “Create File”.
 
 
-
+Note: Blast results can vary slightly between runs, even with the same query and settings. This can result in slightly different results from repeated identical Consensus Finder runs.
 Results
 The results shows you a list of mutations to make which are likely to increase the stability of your protein. The are listed in order of most conserved (and best bet for stabilization) to least. So if you get a long list, start at the top. If you have your gene and want to use site-directed mutagenesis to change the indicated residues, a site like primerX can aid you in designing primers to make these changes (http://www.bioinformatics.org/primerx/cgi-bin/DNA_1.cgi). 
 If you don’t get any results, see the Options section below to change the parameters.
 
 
 Optional operations
-
 
 2000 Set maximum sequences for BLAST search (Range: 10 - 10000)
 
