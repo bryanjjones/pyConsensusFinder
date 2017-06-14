@@ -2,17 +2,19 @@
 import sys
 import _mypath
 import numpy as np # need numpy for arrays and the like
+#import subprocess # need to run binaries (blast, CD-hit, clustal)
 import ConfigParser# need to read Config file
-import time # need to time various steps
-from runbin import Command # need to run binaries (e.g. BLAST, CDHIT, CLUSTAL O) with timeout function
-import analyze # for processing alingments and suggesting mutations
+import time
+from runbin import Command
+import analyze
+#import trimmer
 import os
 from Bio import SeqIO, Entrez, SeqRecord, Seq
 
 programstart = time.time()
 warnings = []
 
-#DEFAULT SETTINGS, only used if not specified in config.cfg, else they get replaced
+#DEFAULT SETTINGS
 FILENAME = None
 Entrez.email = None
 MAXIMUMSEQUENCES = 2000
@@ -25,13 +27,12 @@ MAXIMUMREDUNDANCYTHRESHOLD = 0.9
 LOGGING = 0
 KEEPTEMPFILES = 0
 
-#function to exit cleanly by deleting any temporary files (unless indicated to save them)
-def cleanexit(message):
+def cleanexit(message): #function to exit cleanly by deleting any temporary files (unless indicated to save them)
     if KEEPTEMPFILES:
         print 'Leaving temporary files'
     else:
         print 'Deleting temporary files'
-        for file in ['./processing/'+FILENAME+'_all_sequences.tmp','./processing/cdhit.tmp','./processing/cdhit.tmp.clstr','./processing/clustal.tmp']:
+        for file in ['./processing/'+str(FILENAME)+'_all_sequences.tmp','./processing/cdhit.tmp','./processing/cdhit.tmp.clstr','./processing/clustal.tmp']:
             if os.path.isfile(file):
                 os.remove(file)
     print 'Exiting'
@@ -42,8 +43,14 @@ BLAST="./binaries/blastp" #change this if another version is installed locally
 CDHIT="./binaries/cd-hit" #change this if another version is installed locally
 CLUSTAL="./binaries/clustalo-1.2.0-Ubuntu-x86_64" #change this if another version is installed locally
 
+
 #read from the config file
+#Config = ConfigParser.ConfigParser()
 Config = ConfigParser.SafeConfigParser()
+#need to check if user specified ratio and threshold
+Config.read("./config/config.cfg") 
+hasratio = Config.has_option('AlignmentSettings', 'ConsensusRatio')
+hasthreshold = Config.has_option('AlignmentSettings', 'ConsensusThreshold')
 
 #Config.read("./config/default.cfg") #read defaults from here
 Config.read("./config/config.cfg") #overwrite defaults from here
@@ -54,31 +61,12 @@ def get_with_default(Config,section,name,default):
     else:
         return default
 
-# check directory structure
-dirs = filter(os.path.isdir, ['./config', './uploads', './processing', './completed', './modules']) #check for presence of directory structure
-if len(dirs) < 5:
-     cleanexit('Missing directories. Expected to find /config, /uploads, /processing, /completed, and /modules in the working directory.')
-bins = filter(os.path.isfile, [BLAST, CDHIT, CLUSTAL])
-if len(bins) < 3:
-     cleanexit('Missing binaries. Expected to find '+BLAST+', '+CDHIT+', and '+CLUSTAL+'.')
-
-#check for presence of config file
-if not os.path.isfile('./config/config.cfg'):
-    cleanexit('Config file missing. Expected to find it at ./config/config.cfg')
-
 #get filename for query file and check if the file is valid.
+
 FILENAME=get_with_default(Config, 'BasicSettings', 'filename', FILENAME)
-#check if there is a specified file
 if not FILENAME:
     print "No query file specified in CONFIGFILE. EXITING"
     sys.exit("No query file specified in CONFIGFILE. EXITING")
-#check if that specified file actually exists
-if not os.path.isfile('./uploads/'+FILENAME):
-    if os.path.isfile('./'+FILENAME):
-        os.rename('./'+FILENAME, './uploads/'+FILENAME)
-    else:
-        cleanexit('Query file specified in the config file (config.cfg), '+FILENAME+' not found. Expected to find it at ./uploads/'+FILENAME)
-#check if that specified file has only one sequence
 if not 1 == (len(list(SeqIO.parse('./uploads/'+FILENAME, "fasta")))):
     message = "WARNING, MORE THAN ONE SEQUENCE FOUND IN "+FILENAME+". Using only the first sequence. "
     print message
@@ -107,37 +95,49 @@ MAXIMUMREDUNDANCYTHRESHOLD = float(get_with_default(Config, 'AlignmentSettings',
 LOGGING = bool('yes' == get_with_default(Config,'TroubleShooting', 'Logging', LOGGING))
 KEEPTEMPFILES = bool('yes' == get_with_default(Config,'TroubleShooting', 'KeepTempFiles',KEEPTEMPFILES))
 
-#Need to check if user specified ratio and threshold.
-#If both are specified results from both will be suggested. Otherwise, only the one specified will be used.
-#So if user specified threshold, but no ratio, don't use default ratio.
-#Default ratio should only be used when user specified neither ratio nor thershold in config file.
-hasratio = Config.has_option('AlignmentSettings', 'ConsensusRatio')
-hasthreshold = Config.has_option('AlignmentSettings', 'ConsensusThreshold')
+#if user specified threshold, but no ratio, don't use default ratio.
+#default ratio should only be used when user specified neither ratio nor thershold in config file
 if hasthreshold and not hasratio:
     RATIO=None
+
+# check directory structure
+dirs = filter(os.path.isdir, ['./config', './uploads', './processing', './completed', './modules']) #check for presence of directory structure
+if len(dirs) < 5:
+     cleanexit('Missing directories. Expected to find /config, /uploads, /processing, /completed, and /modules in the working directory.')
+bins = filter(os.path.isfile, [BLAST, CDHIT, CLUSTAL])
+if len(bins) < 3:
+     cleanexit('Missing binaries. Expected to find '+BLAST+', '+CDHIT+', and '+CLUSTAL+'.')
+
+#check for presence of config files
+#if not os.path.isfile('./config/default.cfg'):
+#    cleanexit('Defaults config file missing. Expected to find it at /config/default.cfg')
+if not os.path.isfile('./config/config.cfg'):
+    cleanexit('Config file missing. Expected to find it at /config/config.cfg')
 
 #Run Blast
 RUNBLAST = BLAST+' -db nr -query ./uploads/'+FILENAME+' -evalue '+str(BLASTEVALUE)+' -max_target_seqs '+str(MAXIMUMSEQUENCES)+' -outfmt "6 sacc sseq pident" -remote' 
 print "Begining BLAST search of NCBI. This will take a few minutes."
 start = time.time()
+REDUCED_MAX_SEQS=0 #ticker to indicate if maximum sequences had to be reduced due to blast timeout
 
 command = Command(RUNBLAST)
-BLASTOUT=command.run(timeout=1800)
+BLASTOUT=command.run(timeout=1800) #died by itself at 1884, succeeded at  1225 seconds
 if command.status == -15: #error code from Command indicating timeout
     message = 'BLAST TOOK TOO LONG. Maximum sequences reduced to 200 BLAST results. '
     print message
-    RUNBLAST = BLAST+' -db nr -query ./uploads/'+FILENAME+' -evalue '+str(BLASTEVALUE)+' -max_target_seqs 200 -outfmt "6 saccver sseq pident" -remote' #repeat blast search with only 200 max sequences. Thus even if user (or default) specifies too many sequences, they can still get some useful output.
+    RUNBLAST = BLAST+' -db nr -query ./uploads/'+FILENAME+' -evalue '+str(BLASTEVALUE)+' -max_target_seqs 200 -outfmt "6 saccver sseq pident" -remote' #repeat blast search with only 200 max sequences
     print "Begining BLAST search of NCBI. This will take a few minutes."
     start = time.time()
-    warnings.append(message) #add warning that blast took too long to the warnings list so the user knows what happened.
+    REDUCED_MAX_SEQS=1 #ticker to indicate that we had to reduce the maximum sequences to get results
+    warnings.append(message)
     command = Command(RUNBLAST)
-    BLASTOUT=command.run(timeout=1800)
+    BLASTOUT=command.run(timeout=2000)
     if command.status == -15: #error code from Command indicating timeout
         cleanexit('BLAST STILL TOOK TOO LONG! Giving up.')
 if command.status != 0: #any other error code
     cleanexit('BLAST FAILED. I do not know why, check your inputs, internet connection, etc.')
 
-#temporary data set to skip actual blast search just to speed troubleshooting
+#temporary data set to skip actual blast search
 '''
 BLASTOUT=[0,"""WP_083418319    PCPSFLIEHDRGLVLFDAGFDPRGLDDMAAYYPEISKALPMAGNRDLGIDRQLDGLGYRPSQISYVIPSHLHFDHAGGLYLFPDSTFLMGSGEMAFALQAHDKPQ---AGFFRVEDLLPTRHFDW--IETAHDFDLFGDGSVVLLFSPGHTPGSLALFVRLPNQ-NIILSGDVCHFPLEVDMGIIATSSFSPSYATF-ALRRLRMISKAWDARIWIQHEEDHWNEWPHAPE 26.840
 WP_073456977    PMPAYLIEHPKGLVLFDTMLVPDAADDPERVYGPLAEHLGLKYTREQRVDNQIKALGYRLEDVTHVIASHTHFDHSGGLYLFPHAKFYVGEGELRFAL--WPDPAGAGFFRQADIEA--TRSFNW--VQVGFDHDLFGDGSVVVLHTPGHTPGELSLLVRL-KSRNFILTGDTVHLRQALEDEIPMP---YDSNTELAIRSIRRLKLLRESADATVWITHDPEDWAEFQHAPYCY       29.362
@@ -154,8 +154,6 @@ for index in range(len(BLASTOUT[:])): #for each sequence split at the white spac
     BLASTOUT[index]=BLASTOUT[index].split()
 VERSIONS = [item[0] for item in BLASTOUT]
 print 'BLAST returned '+str(len(VERSIONS))+' sequences.'
-if not len(VERSIONS):
-    cleanexit('BLAST did not return any hits. Check your input sequence and blast parameters. \nTry increasing BlastEValue. If it still does not work, you may have an orphan sequence with no known homologs and Consensus Finder is unable to help you.')
 
 record=[] #initialize list for recording sequences
 if USECOMPLETESEQUENCES: #if use complete sequences is true, dowload sequences from Entrez, otherwise just use returned BLAST sequences
@@ -169,9 +167,9 @@ else:
     for item in BLASTOUT:
         item[1]=item[1].translate(None, '-') #remove gaps (-) since they would mess up CD-HIT later
         record.append(SeqRecord.SeqRecord(Seq.Seq(item[1]),id=item[0],description="")) # add each sequence to the record
+
 SeqIO.write(record, './processing/'+FILENAME+'_all_sequences.tmp', "fasta") # Save all sequences identified by blast as fasta file for processing with CD-HIT
 
-#process sequences with CDHIT to cluster similar sequences and take only one sequence from each cluster. This helps eliminated oversampling bias.
 RUNCDHIT = CDHIT+' -i ./processing/'+FILENAME+'_all_sequences.tmp -o ./processing/cdhit.tmp -c '+str(MAXIMUMREDUNDANCYTHRESHOLD)+' -M 0 -T 0'  
 print "Removing redundant sequences using CD-HIT"
 start = time.time()
@@ -184,7 +182,7 @@ elif command.status != 0: #any other error code
 end = time.time()
 print 'Removing redundant sequences took '+str(int(end - start))+' seconds'
 
-#add query sequence to the top of the list of sequences so it can be aligned too and be used for trimming.
+#add query sequence to list
 querry_sequences = [] # Setup an empty list
 querry_sequences.append(SeqIO.read('./uploads/'+FILENAME, "fasta"))
 for record in SeqIO.parse('./processing/cdhit.tmp', "fasta"):
@@ -197,7 +195,8 @@ print "Aligning sequences using Clustal Omega. This can take a few minutes, espi
 start = time.time()
 command = Command(RUNCLUSTAL)
 CLUSTALOUT=command.run(timeout=7200)
-print CLUSTALOUT[1] #output from Clustal
+#command.run(timeout=900)
+print CLUSTALOUT
 if command.status == -15:
     cleanexit('CLUSTAL TOOK TOO LONG! Try with fewer sequences.')
 elif command.status != 0:
@@ -206,16 +205,12 @@ end = time.time()
 print 'Aligning sequences took '+str(int(end - start))+' seconds'
 
 #processing steps from analyze module.
-#Trimmer will trim the alingment down to the size of the query sequence.
-#aacounts will count the ocourances of each amino acid at each position and save as csv
-#aafrequencies will calculate amino acid frequencies from the counts at each position and save as csv.
-#consensus will calculate the overall consensus sequence from the amino acid frequencies, and save it as fasta
 trimmed = analyze.trimmer('./processing/clustal.tmp',filename='./completed/'+FILENAME+'_trimmed_alignment.fst')
 counts = analyze.aacounts(trimmed, filename='./completed/'+FILENAME+'_counts.csv')
 freqs = analyze.aafrequencies(counts, filename='./completed/'+FILENAME+'_frequencies.csv')
 consensus = analyze.consensus(freqs, filename='./completed/'+FILENAME+'_consensus.fst')
 
-#get suggested mutations based either upon specified ratio, cutoff, or both (depending on what was specified)
+
 if RATIO:
     ratiomutations = analyze.ratioconsensus(trimmed[0], freqs, RATIO)
 if CONSENSUSTHRESHOLD:
@@ -225,7 +220,7 @@ if CONSENSUSTHRESHOLD:
         mutations = np.append(mutations, ratiomutations)
 else:
 	mutations = ratiomutations
-#format mutations list by eliminating duplicates and adding descriptor text
+
 mutations, output = analyze.formatmutations(mutations)
 
 #Save output suggestions file with any warnings that have been added
@@ -233,11 +228,10 @@ file = open('./completed/'+FILENAME+'_mutations.txt','wb')
 file.write(''.join(warnings) + '\n')# 's16\n')
 np.savetxt(file, output, delimiter=",", fmt='%s') 
 
-#move query file from uploads directory to completed to keep uploads clean
-os.rename('./uploads/'+FILENAME, './completed/'+FILENAME)
 programend = time.time()
 print 'Consensus Finder Completed.'
-print 'Your results are in the ./completed/ directory.'
+print 'Your results are in the /completed/ directory.'
+
 print ''.join(warnings)
 print 'Process took '+str(int(programend - programstart))+' seconds'
 cleanexit(0)
