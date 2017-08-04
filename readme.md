@@ -35,20 +35,18 @@ The results shows you a list of mutations to make which are likely to increase t
 If you don’t get any results, see the Options section below to change the parameters.
 
 
-Optional operations
+Optional operations for config.cfg file
 
-2000 Set maximum sequences for BLAST search (Range: 10 - 10000)
+[BlastSettings]
+MaximumSequences: 2000    Set maximum sequences for BLAST search (Range: 10 - 10000)
+BlastEValue: 1e-3  Set maximum e value for BLAST search (Range: 1e-30 - 1e-1)
 
-1e-3  Set maximum e value for BLAST search (Range: 1e-30 - 1e-1)
-
-.6      Conservation threshold for suggesting mutations (Range: .05 - .99)
-
-[]      Use only matched portions, not complete sequences
-
-1      Iterations of ClastalW alignments (Range: 1 - 5)
-
-.9     CD-Hit redundancy (Range: .5 - 1.0)
-
+[AlignmentSettings]
+UseCompleteSequences: yes Use only matched portions, not complete sequences 
+AlignmentIterations: 1      Iterations of ClastalW alignments (Range: 1 - 5)
+MaximumRedundancyThreshold: .9     CD-Hit redundancy (Range: .5 - 1.0)
+ConsensusRatio: 7 Conservation threshold ratio of consensus residue to query residue for suggesting mutations (Range: 1 - 100)
+ConsensusThreshold: .6      Conservation threshold of consensus residue frequency for suggesting mutations (Range: .05 - .99)
 
 BLAST parameters can be changed to adjust maximum number of sequences and adjust 
 the maxumum e value. One or the other will limit the number of sequences returned. For both lower 

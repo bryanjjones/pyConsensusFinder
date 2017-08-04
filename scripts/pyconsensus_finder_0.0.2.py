@@ -41,7 +41,7 @@ def cleanexit(message): #function to exit cleanly by deleting any temporary file
 #location of binaries to call
 BLAST="./binaries/blastp" #change this if another version is installed locally
 CDHIT="./binaries/cd-hit" #change this if another version is installed locally
-CLUSTAL="./binaries/clustalo-1.2.0-Ubuntu-x86_64" #change this if another version is installed locally
+CLUSTAL="./binaries/clustalo-1.2.4-Ubuntu-x86_64" #change this if another version is installed locally
 
 
 #read from the config file
