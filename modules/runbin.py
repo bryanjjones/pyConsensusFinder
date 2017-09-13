@@ -20,12 +20,12 @@ class Command(object):
 			command = shlex.split(command)
 		self.command = command
 
-	def run(self, timeout=None, **kwargs):
+	def run(self, timeout=None, stdin=None, **kwargs):
 		""" Run a command then return: (status, output, error). """
 		def target(**kwargs):
 			try:
 				self.process = subprocess.Popen(self.command, **kwargs)
-				self.output, self.error = self.process.communicate()
+				self.output, self.error = self.process.communicate(stdin)
 				self.status = self.process.returncode
 			except:
 				self.error = traceback.format_exc()
@@ -35,6 +35,8 @@ class Command(object):
 			kwargs['stdout'] = subprocess.PIPE
 		if 'stderr' not in kwargs:
 			kwargs['stderr'] = subprocess.PIPE
+		if 'stdin' not in kwargs:
+			kwargs['stdin'] = subprocess.PIPE
 		# thread
 		thread = threading.Thread(target=target, kwargs=kwargs)
 		thread.start()
@@ -45,5 +47,3 @@ class Command(object):
 			print 'Terminating process'
 			thread.join()
 		return self.status, self.output, self.error
-
-

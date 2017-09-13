@@ -12,7 +12,7 @@ LOGGING="0"
 KEEPTEMP="0"
 EMIAL="ConsensusFinderUser@xxx.com"
 CFG="./config/config.cfg"
-pyConsensusFinder="./scripts/pyconsensus_finder_0.0.2.py"
+pyConsensusFinder="./scripts/pyconsensus_finder_0.0.3.py"
 
 #get values form command line arguments:
 while getopts ":hs:e:t:ci:r:klq:a:o:" opt; do
