@@ -10,6 +10,7 @@ import time
 import StringIO
 import _mypath
 import analyze
+import ConfigParser
 
 HOME = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
 #Main CF program, takes settings object and runs blast, cdhit, and clustalo. Then trims gaps, calculates counts, frequencies, and consensus at each position. Finally produces an output file with suggested mutations.
@@ -55,11 +56,10 @@ def cleanexit(message=None, keeptemp=False): #function to exit cleanly by deleti
 
 #assign settings based upon specified defaults and values read from configfile
 class setsettings(object):
-    def __init__(self, defs, configfile=HOME+"/config.cfg"):
+    def __init__(self, defs, configfile=HOME+"/config/config.cfg"):
         #check for presence of config file
         if not os.path.isfile(configfile):
             cleanexit('Config file missing. Expected to find it at '+configfile)
-        import ConfigParser# need to read Config file
         #check threshold only
         NoDefaultConfig=ConfigParser.SafeConfigParser()
         NoDefaultConfig.read(configfile)
@@ -88,6 +88,7 @@ class setsettings(object):
         self.CHAIN = Config.get('Options', 'Chain')
         self.RESIDUE = Config.getint('Options', 'Residue')
         self.ANG = Config.getfloat('Options', 'Angstrom')
+
 # check file structure, query is given, sequence is protein, if binaries are present.
 # exits if fatal problems are present, returns 'warnings' if non-fatal problems are present
 class checks(object):
