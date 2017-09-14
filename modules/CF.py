@@ -179,6 +179,7 @@ class runblast(object):
             start = time.time() #start timer for downloads
             print('\nDownloading complete sequences from NCBI.')
             Bio.Entrez.email=settings.EMAIL
+            #need to make this try/except to handle occasional errors with fetching sequences from Entrez see http://lists.open-bio.org/pipermail/biopython/2011-October/013735.html for example
             handle = Bio.Entrez.efetch(db="protein", id=",".join(self.versions), retmax=settings.MAXIMUMSEQUENCES, rettype="fasta", retmode="text") #retrieving all sequences from Entrez, db="sequences"
             self.out = list(Bio.SeqIO.parse(handle, "fasta"))
             print('Downloaded '+str(len(self.out))+' sequences')

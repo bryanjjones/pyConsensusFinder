@@ -190,7 +190,7 @@ def formatmutations(mutations_with_dups):
             SUGGESTED_MUTATIONS.append("No mutations found. Try reducing the ConsensusRatio or ConsensusThreshold in the config file. You could also try changing the BLAST parameters to adjust the number of sequences being returned (MaximumSequences and BlastEValue).")
     else:
         for i in mutations: #for each suggested mutation
-            SUGGESTED_MUTATIONS.append("Change " + mutations[i].wt + " " + str(mutations[i].res) + " to " + mutations[i].sug + " (" + str(int(100*mutations[i].freq)) + "% of similar proteins have " + mutations[i].sug +", only " + str(int(100*mutations[i].wtfreq)) + "% have "+ mutations[i].wt + ")" ) #add new suggestion on to any existing "SUGGESTED_MUTATIONS"
+            SUGGESTED_MUTATIONS.append("Change " + i.wt + " " + str(i.res) + " to " + i.sug + " (" + str(int(100*i.freq)) + "% of similar proteins have " + i.sug +", only " + str(int(100*i.wtfreq)) + "% have "+ i.wt + ")" ) #add new suggestion on to any existing "SUGGESTED_MUTATIONS"
     return mutations, SUGGESTED_MUTATIONS
 
 #define mutation list based on settings attributes of RATIO and/or CONSESUSTHRESHOLD and using trimmed alignment of sequences to identify query sequence (first sequence in alignment), and array of amino acid frequencies matching amino acid positions.
