@@ -178,8 +178,10 @@ class runblast(object):
         self.out=[] #initialize list for recording sequences
         if settings.USECOMPLETESEQUENCES: #if use complete sequences is true, dowload sequences from Entrez, otherwise just use returned BLAST sequences
             start = time.time() #start timer for downloads
-            print('\nDownloading complete sequences from NCBI.')
+            print('\nDownloading '+str(len(self.versions))+' complete sequences from NCBI.')
             Bio.Entrez.email=settings.EMAIL
+            Bio.Entrez.tool = "Consensus Finder"
+            #If this keeps returning too few sequences, maybe try setting a smaller batch size, maybe 100?
             try:
                 handle = Bio.Entrez.efetch(db="protein", id=",".join(self.versions), retmax=settings.MAXIMUMSEQUENCES, rettype="fasta", retmode="text") #retrieving all sequences from Entrez, db="sequences"
                 self.out = list(Bio.SeqIO.parse(handle, "fasta"))
