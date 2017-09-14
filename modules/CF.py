@@ -216,7 +216,7 @@ class runcdhit(object):
         self.out.append(next(Bio.SeqIO.parse(HOME+'/uploads/'+settings.FILENAME, "fasta"))) #add query sequence to list as Bio SeqRecord object
         for record in Bio.SeqIO.parse(cdhitoutput, "fasta"): #add other sequences to list as Bio SeqRecord objects
             self.out.append(record)
-        print(len(self.out+' sequences after removind redundants.')
+        print(len(self.out)+' sequences after removind redundants.')
         if filename is not None:
             Bio.SeqIO.write(self.out, filename, "fasta")
         os.remove(cdhitinput)
