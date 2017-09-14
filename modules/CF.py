@@ -15,7 +15,13 @@ import ConfigParser
 HOME = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
 #Main CF program, takes settings object and runs blast, cdhit, and clustalo. Then trims gaps, calculates counts, frequencies, and consensus at each position. Finally produces an output file with suggested mutations.
 class CF(object):
-    def __init__(self,settings,warnings=[],write=True):
+    def __init__(self, defaults, configfile, write=True):
+        settings=setsettings(defaults,configfile)
+        #do checks of settings
+        warnings=[]
+        #Run CF checks to check all settings, return any warnings to warnings variable
+        warnings=warnings+checks(settings).warnings
+
         if write:
             trimmed_output=HOME+'/completed/'+settings.FILENAME+'_trimmed_alignment.fst'
             counts_output=HOME+'/completed/'+settings.FILENAME+'_counts.csv'
@@ -28,6 +34,7 @@ class CF(object):
             freqs_output=None
             consensus_output=None
             summary_output=None
+        #run binaries, pass results from blast to cdhit, and from cdhit to clustalo
         self.blast=runblast(settings)
         self.cdhit=runcdhit(settings,self.blast.out)
         self.clustalo=runclustalo(settings,self.cdhit.out)
@@ -39,6 +46,7 @@ class CF(object):
         self.consensus = analyze.consensus(self.freqs, filename=consensus_output)
         self.mutations, self.output = analyze.mutations(settings, self.trimmed, self.freqs)
         self.warnings=warnings + self.blast.warnings
+        self.settings = settings
         if write:
             analyze.saveoutput(settings, self.warnings, self.output, summary_output)
 
@@ -88,7 +96,11 @@ class setsettings(object):
         self.CHAIN = Config.get('Options', 'Chain')
         self.RESIDUE = Config.getint('Options', 'Residue')
         self.ANG = Config.getfloat('Options', 'Angstrom')
-
+        #location of binaries to call
+        self.BLAST = Config.get('Options', 'Blast_binary')
+        self.CDHIT = Config.get('Options', 'CDHIT_binary')
+        self.CLUSTAL = Config.get('Options', 'ClustalO_binary')
+        
 # check file structure, query is given, sequence is protein, if binaries are present.
 # exits if fatal problems are present, returns 'warnings' if non-fatal problems are present
 class checks(object):

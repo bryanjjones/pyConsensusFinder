@@ -23,23 +23,16 @@ defaults = {
             'Angstrom' : "1",
             'Residue' : "0",
             'PDB_Name' : "None",
+            'Blast_binary' : HOME+"/binaries/blastp",
+            'CDHIT_binary' : HOME+"/binaries/cd-hit",
+            'ClustalO_binary' : HOME+"/binaries/clustalo-1.2.4-Ubuntu-x86_64",
             }
 
-settings=CF.setsettings(defaults,configfile)
-#location of binaries to call
-settings.BLAST=HOME+"/binaries/blastp"
-settings.CDHIT=HOME+"/binaries/cd-hit"
-settings.CLUSTAL=HOME+"/binaries/clustalo-1.2.4-Ubuntu-x86_64"
-
 programstart = time.time()
-#do checks of settings
-warnings=[]
-#Run CF checks to check all settings, return any warnings to warnings variable
-warnings=warnings+CF.checks(settings).warnings
-MainProgram=CF.CF(settings,warnings=warnings)
+MainProgram=CF.CF(defaults,configfile)
 programend = time.time()
 print '\nConsensus Finder Completed.'
-os.rename(HOME+'/uploads/'+settings.FILENAME, HOME+'/completed/'+settings.FILENAME)
+os.rename(HOME+'/uploads/'+MainProgram.settings.FILENAME, HOME+'/completed/'+MainProgram.settings.FILENAME)
 for i in MainProgram.output[:]:
     print(i)
 print 'Your results are in the ./completed/ directory.'
