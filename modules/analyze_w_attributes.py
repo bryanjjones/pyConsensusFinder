@@ -9,6 +9,13 @@ IDS = np.zeros([22,1],dtype=object)
 IDS[:,0]=['G', 'P', 'A', 'V', 'L', 'I', 'M', 'C', 'F', 'Y', 'W', 'H', 'K', 'R', 'Q', 'N', 'E', 'D', 'S', 'T', '-', 'other']   
 #make a list of data types for suggested mutation tuples wt= wild type (given) residue, res=residue number, sug= suggested mutation (consensus residue), freq= frequency of consensus residue (0-1), wtfreq= frequency of wild type (given) residue (0-1)  
 TYPES = [('wt', 'S1'), ('res', int), ('sug', 'S1'),('freq', float),('wtfreq', float)] 
+class res_to_change(object):
+    def __init__(self, wt, res, sug, freq, wtfreq):
+        self.wt=wt
+        self.res=res
+        self.sug=sug
+        self.freq=freq
+        self.wtfreq=wtfreq
 
 #Given an alingment as a Bio SeqRecord object,
 #Returns an array of sequences with each amino acid as an element.
@@ -131,8 +138,9 @@ def consensus(FREQS, filename=None):
 #acids that differ from the consensus (i.e. highest frequency) by at least the ratio.
 #If given a filename, suggested mutations will be saved as txt file.
 def ratioconsensus(query, FREQS, ratio):    
-    MUTATIONS_ARRAY=np.empty([0,])
-    MUTATIONS_ARRAY=np.array(MUTATIONS_ARRAY, dtype=TYPES)
+    mutations=[]
+    #mutations=np.empty([0,])
+    #mutations=np.array(mutations, dtype=TYPES)
     aalist = IDS.flatten().tolist()
     for index in range(len(FREQS[0,:])): #for each AA position
         wtaa = query[index]
@@ -143,17 +151,17 @@ def ratioconsensus(query, FREQS, ratio):
             if (ratio * wtfreq) < consensusfreq: #if the consensus of a residue is greater than the threshold
                 print "Residue number " + str(int(index) + 1)
                 print str(int(100*consensusfreq)) + '% is at least ' + str(ratio) + ' times greater than ' + str(int(100*wtfreq)) + '%'
-                thissuggestion=np.array([(wtaa, (index + 1), consensus, consensusfreq, wtfreq)], dtype=TYPES) 
-                MUTATIONS_ARRAY = np.append(MUTATIONS_ARRAY,thissuggestion, axis=0)#add new suggestion on to any existing "MUTATIONS_ARRAY"
-    return MUTATIONS_ARRAY
+                thissuggestion=res_to_change(wtaa,(index+1), consensus, consensusfreq, wtfreq)
+                mutations.append(thissuggestion)
+    return mutations
 
 #Returns a list of suggested amiono acid mutations when given a query sequence, 
 #frequency array, and cutoff for the consensus threshold. Will suggest mutations to consensus when query amino 
 #acids that differ from the consensus and the consensus is at least cutoff.
 #If given a filename, suggested mutations will be saved as txt file.
 def cutoffconsensus(query, FREQS, cutoff):    
-    MUTATIONS_ARRAY=np.empty([0,])
-    MUTATIONS_ARRAY=np.array(MUTATIONS_ARRAY, dtype=TYPES)
+    mutations=np.empty([0,])
+    mutations=np.array(mutations, dtype=TYPES)
     aalist = IDS.flatten().tolist()
     for index in range(len(FREQS[0,:])): #for each AA position
         wtaa = query[index]
@@ -165,23 +173,23 @@ def cutoffconsensus(query, FREQS, cutoff):
                 print "Residue number " + str(int(index) + 1)
                 print str(int(100*max(FREQS[:20,index]))) + "% is greater than or equal to " + str(int(100*float(cutoff))) + "%"
                 thissuggestion=np.array([(wtaa, (index + 1), consensus, consensusfreq, wtfreq)], dtype=TYPES) 
-                MUTATIONS_ARRAY = np.append(MUTATIONS_ARRAY,thissuggestion, axis=0)#add new suggestion on to any existing "MUTATIONS_ARRAY"
-    return MUTATIONS_ARRAY
+                mutations = np.append(mutations,thissuggestion, axis=0)#add new suggestion on to any existing "mutations"
+    return mutations
     
 #Takes array of suggested mutations in TYPES format, sorts by % conserved, removes duplicates.
 #Returns modified mutations array in with TYPE data types, and human readable suggested mutations list.
 #If given filename, will save human readable suggested mutation list as text file.
-def formatmutations(MUTATIONS_ARRAY):
-    MUTATIONS_ARRAY = np.unique(MUTATIONS_ARRAY) #remove duplicate entries
-    MUTATIONS_ARRAY[::-1].sort(order = 'freq')
+def formatmutations(mutations):
+    mutations = np.unique(mutations) #remove duplicate entries
+    mutations[::-1].sort(order = 'freq')
     SUGGESTED_MUTATIONS=[]
     SUGGESTED_MUTATIONS.append("These mutations may stabilize your protein since they differ from the consensus residue")
-    if not len(MUTATIONS_ARRAY[:,]):
+    if not len(mutations[:,]):
             SUGGESTED_MUTATIONS.append("No mutations found. Try reducing the ConsensusRatio or ConsensusThreshold in the config file. You could also try changing the BLAST parameters to adjust the number of sequences being returned (MaximumSequences and BlastEValue).")
     else:
-        for index in range(len(MUTATIONS_ARRAY[:,])): #for each suggested mutation
-            SUGGESTED_MUTATIONS.append("Change " + MUTATIONS_ARRAY[index,]['wt'] + " " + str(MUTATIONS_ARRAY[index,]['res']) + " to " + MUTATIONS_ARRAY[index,]['sug'] + " (" + str(int(100*MUTATIONS_ARRAY[index,]['freq'])) + "% of similar proteins have " + MUTATIONS_ARRAY[index,]['sug'] +", only " + str(int(100*MUTATIONS_ARRAY[index,]['wtfreq'])) + "% have "+ MUTATIONS_ARRAY[index,]['wt'] + ")" ) #add new suggestion on to any existing "SUGGESTED_MUTATIONS"
-    return MUTATIONS_ARRAY, SUGGESTED_MUTATIONS
+        for index in range(len(mutations[:,])): #for each suggested mutation
+            SUGGESTED_MUTATIONS.append("Change " + mutations[index,]['wt'] + " " + str(mutations[index,]['res']) + " to " + mutations[index,]['sug'] + " (" + str(int(100*mutations[index,]['freq'])) + "% of similar proteins have " + mutations[index,]['sug'] +", only " + str(int(100*mutations[index,]['wtfreq'])) + "% have "+ mutations[index,]['wt'] + ")" ) #add new suggestion on to any existing "SUGGESTED_MUTATIONS"
+    return mutations, SUGGESTED_MUTATIONS
 
 #define mutation list based on settings attributes of RATIO and/or CONSESUSTHRESHOLD and using trimmed alignment of sequences to identify query sequence (first sequence in alignment), and array of amino acid frequencies matching amino acid positions.
 def mutations(settings, alignment, freqs):

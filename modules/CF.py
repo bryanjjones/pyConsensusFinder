@@ -177,12 +177,13 @@ class runblast(object):
         self.out=[] #initialize list for recording sequences
         if settings.USECOMPLETESEQUENCES: #if use complete sequences is true, dowload sequences from Entrez, otherwise just use returned BLAST sequences
             start = time.time() #start timer for downloads
-            print('\nDownloading complete sequences from NCBI')
+            print('\nDownloading complete sequences from NCBI.')
             Bio.Entrez.email=settings.EMAIL
             handle = Bio.Entrez.efetch(db="protein", id=",".join(self.versions), retmax=settings.MAXIMUMSEQUENCES, rettype="fasta", retmode="text") #retrieving all sequences from Entrez, db="sequences"
             self.out = list(Bio.SeqIO.parse(handle, "fasta"))
+            print('Downloaded '+len(self.out)+' sequences')
             end = time.time()
-            print('Downloading sequences took '+str(int(end - start))+' seconds')
+            print('Downloading sequences took '+str(int(end - start))+' seconds.')
         else:
             for item in self.blastout:
                 item[1]=item[1].translate(None, '-') #remove gaps (-) since they would mess up CD-HIT later
@@ -199,7 +200,7 @@ class runcdhit(object):
         cdhitoutput=HOME+'/processing/'+settings.FILENAME+'_cdhit_output.tmp'
         Bio.SeqIO.write(sequences, cdhitinput , "fasta") #converts Bio SeqRecord objects from self.Bioout into fasta strings
         RUNCDHIT = settings.CDHIT+' -i '+cdhitinput+' -o '+cdhitoutput+' -c '+str(settings.MAXIMUMREDUNDANCYTHRESHOLD)+' -M 0 -T 0'  
-        print("\nRemoving redundant sequences using CD-HIT")
+        print("\nRemoving redundant sequences using CD-HIT.")
         start = time.time()
         command = runbin.Command(RUNCDHIT)
         #self.out=command.run(timeout=900) Do I need this?
@@ -215,6 +216,7 @@ class runcdhit(object):
         self.out.append(next(Bio.SeqIO.parse(HOME+'/uploads/'+settings.FILENAME, "fasta"))) #add query sequence to list as Bio SeqRecord object
         for record in Bio.SeqIO.parse(cdhitoutput, "fasta"): #add other sequences to list as Bio SeqRecord objects
             self.out.append(record)
+        print(len(self.out+' sequences after removind redundants.')
         if filename is not None:
             Bio.SeqIO.write(self.out, filename, "fasta")
         os.remove(cdhitinput)
@@ -230,7 +232,7 @@ class runclustalo(object):
         Bio.SeqIO.write(sequences, out_handle, "fasta") #converts Bio SeqRecord objects from self.Bioout into fasta strings
         fastaseqs = out_handle.getvalue() #using StringIO to replace writting to a file
         RUNCLUSTAL = settings.CLUSTAL+' --iter='+str(settings.ALIGNMENTITERATIONS)+' -i - --outfmt=fa --force'
-        print("\nAligning sequences using Clustal Omega. This can take a few minutes, espicially with many sequences")
+        print("\nAligning "+len(sequences)+" sequences using Clustal Omega. This can take a few minutes, espicially with many sequences")
         start = time.time()
         command = runbin.Command(RUNCLUSTAL)
         self.out = command.run(timeout=7200, stdin=fastaseqs)
