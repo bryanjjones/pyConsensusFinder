@@ -182,7 +182,7 @@ class runblast(object):
             Bio.Entrez.email=settings.EMAIL
             Bio.Entrez.tool = "Consensus Finder"
             #If this keeps returning too few sequences, maybe try setting a smaller batch size, maybe 100?
-            print('settings.MAXIMUMSEQUENCES is:'+settings.MAXIMUMSEQUENCES)
+            print('settings.MAXIMUMSEQUENCES is:'+str(settings.MAXIMUMSEQUENCES))
             print('saving versions to temp.txt')
             file = open('temp.txt','wb')
             file.write(''.join(self.versions) + '\n')# 's16\n')
