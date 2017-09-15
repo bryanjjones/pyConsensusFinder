@@ -182,6 +182,10 @@ class runblast(object):
             Bio.Entrez.email=settings.EMAIL
             Bio.Entrez.tool = "Consensus Finder"
             #If this keeps returning too few sequences, maybe try setting a smaller batch size, maybe 100?
+            print('settings.MAXIMUMSEQUENCES is:'+settings.MAXIMUMSEQUENCES)
+            print('saving versions to temp.txt')
+            file = open('temp.txt','wb')
+            file.write(''.join(self.versions) + '\n')# 's16\n')
             try:
                 handle = Bio.Entrez.efetch(db="protein", id=",".join(self.versions), retmax=settings.MAXIMUMSEQUENCES, rettype="fasta", retmode="text") #retrieving all sequences from Entrez, db="sequences"
                 self.out = list(Bio.SeqIO.parse(handle, "fasta"))
