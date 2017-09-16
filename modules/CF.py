@@ -173,30 +173,74 @@ class runblast(object):
         for index in range(len(self.blastout[:])): #for each sequence split at the white space (between VERSION and sequence)
             self.blastout[index]=self.blastout[index].split()
         self.versions = [item[0] for item in self.blastout]
-        print('BLAST returned '+str(len(self.versions))+' sequences.')
+        numberofhits = len(self.versions)
+        print('BLAST returned '+str(numberofhits)+' sequences.')
         
         self.out=[] #initialize list for recording sequences
         if settings.USECOMPLETESEQUENCES: #if use complete sequences is true, dowload sequences from Entrez, otherwise just use returned BLAST sequences
             start = time.time() #start timer for downloads
-            print('\nDownloading '+str(len(self.versions))+' complete sequences from NCBI.')
+            print('\nDownloading '+str(numberofhits)+' complete sequences from NCBI.')
             Bio.Entrez.email=settings.EMAIL
             Bio.Entrez.tool = "Consensus Finder"
             #If this keeps returning too few sequences, maybe try setting a smaller batch size, maybe 100?
-            print('settings.MAXIMUMSEQUENCES is:'+str(settings.MAXIMUMSEQUENCES))
-            print('saving versions to temp.txt')
-            file = open('temp.txt','wb')
-            file.write(''.join(self.versions) + '\n')# 's16\n')
-            try:
-                handle = Bio.Entrez.efetch(db="protein", id=",".join(self.versions), retmax=settings.MAXIMUMSEQUENCES, rettype="fasta", retmode="text") #retrieving all sequences from Entrez, db="sequences"
-                self.out = list(Bio.SeqIO.parse(handle, "fasta"))
-                handle.close()
-            except httplib.HTTPException, e:
-                print "Network problem: %s" % e
-                print "Second (and final) attempt..."
-                handle = Bio.Entrez.efetch(db="protein", id=",".join(self.versions), retmax=settings.MAXIMUMSEQUENCES, rettype="fasta", retmode="text") #retrieving all sequences from Entrez, db="sequences"
-                self.out = list(Bio.SeqIO.parse(handle, "fasta"))
-                handle.close()
+            #with open('temp.txt','wb') as tempfile:
+            #tempfile.write(versionlist)# 's16\n')
+            def fetchseqs(ids, maxtries):
+                retmax=len(ids)
+                tries=1
+                while tries <= maxtries:
+                    try:
+                        handle = Bio.Entrez.efetch(db="protein", id=ids, retmax=retmax, rettype="fasta", retmode="text") #retrieving all sequences from Entrez, db="sequences"
+                        newseqs = list(Bio.SeqIO.parse(handle, "fasta"))
+                        handle.close()
+                        #assert len(newseqs)==retmax
+                        time.sleep(1) #delay to avoid flooding entrez server
+                        return newseqs
+                    except httplib.HTTPException, e:
+                        print('Network problem on try %s of %s: %s')  % (tries+1,maxtries,e)
+                        tries += 1
+                        if tries <= maxtries:
+                            time.sleep(3**tries) #delay to avoid flooding entrez server
+                            print('Trying again...')
+                        else:
+                            print('Giving up')
+                            print('Try at a less busy time of day, or request fewer sequences')
+                            cleanexit(message='Network problem trying to communicate with Entrez. Try again at a less busy time of day, or request fewer sequences')
+                    except AssertionError:
+                        print('Entrez faild to return all the sequences asked for on try %s of %s') % (tries+1,maxtries)
+                        tries += 1
+                        if tries <= maxtries:
+                            time.sleep(3**tries) #delay to avoid flooding entrez server
+                            print('Trying again...')
+                        else:
+                            print('Giving up')
+                            print('Try at a less busy time of day, or request fewer sequences')
+                            cleanexit(message='Network problem trying to communicate with Entrez. Try again at a less busy time of day, or request fewer sequences')
+                    except:
+                        print('Entrez faild to return the requsted sequences asked for on try %s of %s') % (tries+1,maxtries)
+                        tries += 1
+                        if tries <= maxtries:
+                            time.sleep(3**tries) #delay to avoid flooding entrez server
+                            print('Trying again...')
+                        else:
+                            print('Giving up')
+                            print('Try at a less busy time of day, or request fewer sequences')
+                            cleanexit(message='Network problem trying to communicate with Entrez. Try again at a less busy time of day, or request fewer sequences')
+            #break the list of sequences into chunks
+            chunksize=500
+            chunks=[ self.versions[x:x+chunksize] for x in xrange(0, len(self.versions), chunksize)]
+            for index, chunk in enumerate(chunks):
+                versionlist=",".join(chunk)
+                print('Downloading sequences %s to %s of %s total') % (index*chunksize+1, index*chunksize+len(chunk), len(self.versions))
+                self.out=self.out+fetchseqs(versionlist, 3) #fetch a chunk of sequences and add it on to the list
             print('Downloaded '+str(len(self.out))+' sequences')
+            #sanity check to make sure we got all the requested sequences.
+            try:
+                assert numberofhits==len(self.out)
+            except:
+                print('Did not get the expected '+str(numberofhits)+' sequences from Entrez.')
+                print('Continuing with only '+str(len(self.out))+' sequences.')
+                self.warnings.append('WARNING! Entrez only returned '+len(self.out)+' sequences of '+str(numberofhits)+' requested. Results based on '+len(self.out)+' sequences.')
             end = time.time()
             print('Downloading sequences took '+str(int(end - start))+' seconds.')
         else:
