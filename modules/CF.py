@@ -37,7 +37,11 @@ class CF(object):
             summary_output=None
         #run binaries, pass results from blast to cdhit, and from cdhit to clustalo
         self.blast=runblast(settings)
+        if len(self.blast.versions)==0: #sanity check, make sure we have data
+            cleanexit('Blast Returned zero hits', keeptemp=settings.KEEPTEMPFILES)
         self.cdhit=runcdhit(settings,self.blast.out)
+        if len(self.cdhit.out)==0: #sanity check, make sure we have data
+            cleanexit('CD-HIT returned zero sequences. Cannot continue without sequences.', keeptemp=settings.KEEPTEMPFILES)
         self.clustalo=runclustalo(settings,self.cdhit.out)
         #processing steps from analyze module.
         self.aaaray = analyze.aaaray(self.clustalo.out)
@@ -174,17 +178,13 @@ class runblast(object):
             self.blastout[index]=self.blastout[index].split()
         self.versions = [item[0] for item in self.blastout]
         numberofhits = len(self.versions)
-        print('BLAST returned '+str(numberofhits)+' sequences.')
-        
+        print('BLAST returned '+str(numberofhits)+' sequences.')        
         self.out=[] #initialize list for recording sequences
-        if settings.USECOMPLETESEQUENCES: #if use complete sequences is true, dowload sequences from Entrez, otherwise just use returned BLAST sequences
+        if settings.USECOMPLETESEQUENCES and numberofhits != 0: #if use complete sequences is true, dowload sequences from Entrez, otherwise just use returned BLAST sequences
             start = time.time() #start timer for downloads
             print('\nDownloading '+str(numberofhits)+' complete sequences from NCBI.')
             Bio.Entrez.email=settings.EMAIL
             Bio.Entrez.tool = "Consensus Finder"
-            #If this keeps returning too few sequences, maybe try setting a smaller batch size, maybe 100?
-            #with open('temp.txt','wb') as tempfile:
-            #tempfile.write(versionlist)# 's16\n')
             def fetchseqs(ids, maxtries):
                 retmax=len(ids)
                 tries=1
