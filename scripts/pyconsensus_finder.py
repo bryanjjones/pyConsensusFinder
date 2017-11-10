@@ -43,6 +43,7 @@ parser.add_argument('-i', '--iter',metavar='X',dest='ALIGNMENTITERATIONS',type=i
 parser.add_argument('-r', '--redundancy',metavar='0.X',dest='MAXIMUMREDUNDANCYTHRESHOLD',type=float,default=defaults['Maximum_Redundancy_Threshold'],help='Maximum identity for redundant sequence cutoff by CD-HIT')
 parser.add_argument('-k', '--keeptemp',dest='KEEPTEMPFILES',action='store_true',default=defaults['Keep_Temp_Files'],help='Keep temporary files for troubleshooting')
 parser.add_argument('-l', '--logging',dest='LOGGING',action='store_true',default=defaults['Logging'],help='Turn on logging for troubleshooting')
+#options commented out for future use 
 #parser.add_argument('--chain',metavar="letter",dest="CHAIN",type=str,default=defaults['Chain'],help="Protein chain from PDB")
 #parser.add_argument('--residue',metavar="number",dest="RESIDUE",type=int,default=defaults['Residue'],help="Residue number from PDB")
 #parser.add_argument('--PDB',metavar="code",dest="PDB",type=str,default=defaults['PDB_Name'],help="Four letter PDB ID")
