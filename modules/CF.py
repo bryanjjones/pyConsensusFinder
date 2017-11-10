@@ -16,8 +16,9 @@ import httplib
 HOME = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
 #Main CF program, takes settings object and runs blast, cdhit, and clustalo. Then trims gaps, calculates counts, frequencies, and consensus at each position. Finally produces an output file with suggested mutations.
 class CF(object):
-    def __init__(self, defaults, configfile, write=True):
-        settings=setsettings(defaults,configfile)
+    def __init__(self,defaults=None,configfile=None,settings=None,write=True):
+        if settings is None:
+            settings=setsettings(defaults,configfile)
         #do checks of settings
         warnings=[]
         #Run CF checks to check all settings, return any warnings to warnings variable
@@ -71,8 +72,9 @@ def cleanexit(message=None, keeptemp=False): #function to exit cleanly by deleti
 class setsettings(object):
     def __init__(self, defs, configfile=HOME+"/config/config.cfg"):
         #check for presence of config file
-        if not os.path.isfile(configfile):
-            cleanexit('Config file missing. Expected to find it at '+configfile)
+        if configfile is not None:
+            if not os.path.isfile(configfile):
+                cleanexit('Config file missing. Expected to find it at '+configfile)
         #check threshold only
         NoDefaultConfig=ConfigParser.SafeConfigParser()
         NoDefaultConfig.read(configfile)
