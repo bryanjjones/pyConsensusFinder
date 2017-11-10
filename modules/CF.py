@@ -20,6 +20,15 @@ class CF(object):
         if settings is None:
             settings=setsettings(defaults,configfile)
         #do checks of settings
+        print'query file: '+settings.FILENAME
+        print'email address: '+settings.EMAIL
+        print'BLAST maximum sequences: '+settings.MAXIMUMSEQUENCES
+        print'BLAST maximum e value: '+settings.BLASTEVALUE
+        print'threshold value for consensus: '+settings.CONSENSUSTHRESHOLD
+        print'ratio value for consensus: '+settings.RATIO
+        print'dowload complete sequences from Entrez: '+settings.USECOMPLETESEQUENCES
+        print'Clustal omega alignment itterations: '+settings.ALIGNMENTITERATIONS
+        print'threshold for removing redundant sequences: '+settings.MAXIMUMREDUNDANCYTHRESHOLD
         warnings=[]
         #Run CF checks to check all settings, return any warnings to warnings variable
         warnings=warnings+checks(settings).warnings
