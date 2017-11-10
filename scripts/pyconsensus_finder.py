@@ -3,9 +3,11 @@ import _mypath
 import os
 import CF
 import time
+import argparse
+
+import sys
 
 HOME = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
-
 configfile = HOME+"/config/config.cfg"
 defaults = {
             'File_Name' : "None",
@@ -28,8 +30,36 @@ defaults = {
             'ClustalO_binary' : HOME+"/binaries/clustalo-1.2.4-Ubuntu-x86_64",
             }
 
+
+parser = argparse.ArgumentParser(description='Settings',prog='pyconsensus_finder.py',epilog='If no arguments specified on the command line, options will be read form the config file: '+configfile)
+parser.add_argument('-q', '--query', metavar='FILENAME.FSTA',dest='FILENAME',type=str,default=defaults['File_Name'],help='query file to be analyzed')
+parser.add_argument('-a', '-emailaddress',metavar='NAME@EXAMPLE.COM',dest='EMAIL',type=str,default=defaults['Email'],help='Entrez requires an email address to moitor usage')
+parser.add_argument('-s', '-maxseqs',metavar='X',dest='MAXIMUMSEQUENCES',type=int,default=defaults['Maximum_Sequences'],help='Maximum sequences for BLAST search')
+parser.add_argument('-e', '--evalue',metavar='1e-X',dest='BLASTEVALUE',type=float,default=defaults['Blast_E_Value'],help='Maximum e value for BLAST search')
+parser.add_argument('-t', '--threshold',metavar='0.X',dest='CONSENSUSTHRESHOLD',type=float,default=defaults['Consensus_Threshold'],help='Minimum frequency for determining consensus')
+parser.add_argument('--ratio',metavar='X',dest='RATIO',type=float,default=defaults['Consensus_Ratio'],help='Minimum ratio for determining consensus')
+parser.add_argument('-p', '--partial',dest='USECOMPLETESEQUENCES',action='store_false',default=defaults['Use_Complete_sequences'],help='Use only matching partial sequences returned by BLAST, not complete sequences.')
+parser.add_argument('-i', '--iter',metavar='X',dest='ALIGNMENTITERATIONS',type=int,default=defaults['Alignment_Iterations'],help='Number of clustal omega iterations')
+parser.add_argument('-r', '--redundancy',metavar='0.X',dest='MAXIMUMREDUNDANCYTHRESHOLD',type=float,default=defaults['Maximum_Redundancy_Threshold'],help='Maximum identity for redundant sequence cutoff by CD-HIT')
+parser.add_argument('-k', '--keeptemp',dest='KEEPTEMPFILES',action='store_true',default=defaults['Keep_Temp_Files'],help='Keep temporary files for troubleshooting')
+parser.add_argument('-l', '--logging',dest='LOGGING',action='store_true',default=defaults['Logging'],help='Turn on logging for troubleshooting')
+#parser.add_argument('--chain',metavar="letter",dest="CHAIN",type=str,default=defaults['Chain'],help="Protein chain from PDB")
+#parser.add_argument('--residue',metavar="number",dest="RESIDUE",type=int,default=defaults['Residue'],help="Residue number from PDB")
+#parser.add_argument('--PDB',metavar="code",dest="PDB",type=str,default=defaults['PDB_Name'],help="Four letter PDB ID")
+#parser.add_argument('--angstroms',metavar="X",dest"ANG",type=float,default=defaults['Angstrom']help="Distance in Angstroms")
+parser.add_argument('--BLAST',type=str,default=defaults['Blast_binary'],help=argparse.SUPPRESS)
+parser.add_argument('--CDHIT',type=str,default=defaults['CDHIT_binary'],help=argparse.SUPPRESS)
+parser.add_argument('--CLUSTAL',type=str,default=defaults['ClustalO_binary'],help=argparse.SUPPRESS)
+args = parser.parse_args()
+
 programstart = time.time()
-MainProgram=CF.CF(defaults,configfile)
+#If command line variables are specified, use those.
+if len(sys.argv) > 1:
+   MainProgram=CF.CF(settings=args)
+#If no command line variables are specified, use config file and defaults
+else:
+    print'reading settings from configfile ('+configfile+')'
+    MainProgram=CF.CF(defaults=defaults,configfile=configfile)
 programend = time.time()
 print '\nConsensus Finder Completed.'
 os.rename(HOME+'/uploads/'+MainProgram.settings.FILENAME, HOME+'/completed/'+MainProgram.settings.FILENAME)
