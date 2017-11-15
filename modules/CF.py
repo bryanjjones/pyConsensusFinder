@@ -128,7 +128,7 @@ class checks(object):
              cleanexit('Missing directories. Expected to find /config, /uploads, /processing, /completed, and /modules in the working directory.')
         #check query file
         if not settings.FILENAME:
-            cleanexit("No query file specified in CONFIGFILE. EXITING")
+            cleanexit("No query file specified. EXITING")
         if not os.path.isfile(HOME+'/uploads/'+settings.FILENAME):
             cleanexit('No query file. File '+settings.FILENAME+' does not exist in uploads directory.')
         if not 1 == (len(list(Bio.SeqIO.parse(HOME+'/uploads/'+settings.FILENAME, "fasta")))):

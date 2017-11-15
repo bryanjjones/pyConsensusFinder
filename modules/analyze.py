@@ -187,7 +187,7 @@ def formatmutations(mutations_with_dups):
     SUGGESTED_MUTATIONS=[]
     SUGGESTED_MUTATIONS.append("These mutations may stabilize your protein since they differ from the consensus residue")
     if not len(mutations):
-            SUGGESTED_MUTATIONS.append("No mutations found. Try reducing the ConsensusRatio or ConsensusThreshold in the config file. You could also try changing the BLAST parameters to adjust the number of sequences being returned (MaximumSequences and BlastEValue).")
+            SUGGESTED_MUTATIONS.append("No mutations found. Try reducing the ConsensusRatio or ConsensusThreshold. You could also try changing the BLAST parameters to adjust the number of sequences being returned (MaximumSequences and BlastEValue).")
     else:
         for i in mutations: #for each suggested mutation
             SUGGESTED_MUTATIONS.append("Change " + i.wt + " " + str(i.res) + " to " + i.sug + " (" + str(int(100*i.freq)) + "% of similar proteins have " + i.sug +", only " + str(int(100*i.wtfreq)) + "% have "+ i.wt + ")" ) #add new suggestion on to any existing "SUGGESTED_MUTATIONS"
