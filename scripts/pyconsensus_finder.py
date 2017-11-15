@@ -33,8 +33,8 @@ defaults = {
 
 parser = argparse.ArgumentParser(description='Settings',prog='pyconsensus_finder.py',epilog='If no arguments specified on the command line, options will be read form the config file: '+configfile)
 parser.add_argument('-q', '--query', metavar='FILENAME.FSTA',dest='FILENAME',type=str,default=defaults['File_Name'],help='query file to be analyzed')
-parser.add_argument('-a', '-emailaddress',metavar='NAME@EXAMPLE.COM',dest='EMAIL',type=str,default=defaults['Email'],help='Entrez requires an email address to moitor usage')
-parser.add_argument('-s', '-maxseqs',metavar='X',dest='MAXIMUMSEQUENCES',type=int,default=defaults['Maximum_Sequences'],help='Maximum sequences for BLAST search')
+parser.add_argument('-a', '--emailaddress',metavar='NAME@EXAMPLE.COM',dest='EMAIL',type=str,default=defaults['Email'],help='Entrez requires an email address to moitor usage')
+parser.add_argument('-s', '--maxseqs',metavar='X',dest='MAXIMUMSEQUENCES',type=int,default=defaults['Maximum_Sequences'],help='Maximum sequences for BLAST search')
 parser.add_argument('-e', '--evalue',metavar='1e-X',dest='BLASTEVALUE',type=float,default=defaults['Blast_E_Value'],help='Maximum e value for BLAST search')
 parser.add_argument('-t', '--threshold',metavar='0.X',dest='CONSENSUSTHRESHOLD',type=float,default=defaults['Consensus_Threshold'],help='Minimum frequency for determining consensus')
 parser.add_argument('--ratio',metavar='X',dest='RATIO',type=float,default=defaults['Consensus_Ratio'],help='Minimum ratio for determining consensus')
