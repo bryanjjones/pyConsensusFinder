@@ -10,11 +10,13 @@ class PDB(object):
     def __init__(self,defaults=None,configfile=None,settings=None,write=True):
     	if settings is None:
             settings=setsettings(defaults,configfile)
+
 		##Make new directories
 		filebase=os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
 		outfilebase=filebase+'/completed'
 		if not os.path.exists(outfilebase):
 		    os.makedirs(outfilebase)
+
 		##Defining lists
 		sort1=[]
 		sort2=[]
@@ -31,18 +33,27 @@ class PDB(object):
 		rescode=[]
 		heteroname=[]
 		heterocode=[]
+		warnings = []
 
 		##reading in config values
-		pdb_name=settings.PDB
-		achn=settings.CHAIN
-		ares=settings.RESIDUE
-		m=settings.ANG
-
-		#1. pdb name and residue are empty or wrong. Exit if wrong and throw error messages
-		#2. positive angstroms, more than 2 angstroms
-		#3. consensus finder no output, cannot trim anything
-
-		#save into warnings [], empty list for output, save to filebase+'/completed/'+pdb_name+'.fasta.txt_mutations_pdb.txt'
+		try:
+			if settings.RESIDUE <= 2:
+				print('please enter a distance greater than 2 angstroms')
+				sys.exit()
+			else:
+				pdb_name=settings.PDB
+				achn=settings.CHAIN
+				ares=settings.RESIDUE
+				m=settings.ANG
+				try:
+					with open(filebase+'/completed/'+pdb_name+'.fasta.txt_mutations.txt', 'r') as consensus_file:
+				    for line in consensus_file:
+				        info.append(line.split())
+				except:
+					warnings.append('no output from consensus finder, cannot trim anything')
+		except:
+			print('there is an error with the pdb or residue name provided')
+			sys.exit()
 
 		##creating new directories and initializing biopdb 
 		plist = PDBList()
@@ -129,11 +140,7 @@ class PDB(object):
 		    sf.close()
 		    df.close()
 
-
 		##trimming outputs
-		with open(filebase+'/completed/'+pdb_name+'.fasta.txt_mutations.txt', 'r') as consensus_file:
-		    for line in consensus_file:
-		        info.append(line.split())
 		with open(outfilebase+'//'+'simple_output.csv', 'r') as pdbresults:
 		    for line in pdbresults:
 		        pinfo.append(line.split(','))
@@ -152,9 +159,12 @@ class PDB(object):
 		    	if len(info[r]) is 15:
 		        	hitting.append(info[r][2])
 		hitting.append(str(ares))
-		f.write('The following residues are removed because they are part of the active site: ')
-		for i in range(0, len(hitting)):
-		    f.write(hitting[i]+' ')
+		if not warnings:
+			f.write(warnings[0])
+		else:
+			f.write('The following residues are removed because they are part of the active site: ')
+			for i in range(0, len(hitting)):
+			    f.write(hitting[i]+' ')
 		#Closing files
 		f.close()
 		consensus_file.close() 
