@@ -6,9 +6,9 @@ import analyze
 import CF
 from Bio.PDB import *
 
-
 class PDB(object):
-	def __init__(self,defaults=None,configfile=None,settings=None,write=True):
+	def __init__(self,defaults=None,configfile=None,settings=None,write=True,writeextended=False):
+		#write will rewrite suggested mutations file (XXX_mutations.txt) writeextende will write extra files: detailed_output.csv, residue_list.csv, and simple_output.csv
 		if settings is None:
 			settings=CF.setsettings(defaults,configfile)
 		##Make new directories
@@ -154,18 +154,19 @@ class PDB(object):
 		hitnum_list.append(str(ares))
 
 		#Writing output file
-		f = open(filebase+'/completed/'+pdb_name+'.fasta.txt_mutations_pdb.txt','w')
-		for r in range(0, len(info)):
-		    if len(info[r]) is 15:
-		    	if str(info[r][2]) not in hitnum_list:
-		        	f.write(' '.join(info[r])+'\n')
-		    else:
-		    	if len(info[r]) is 15:
-		        	hitting.append(info[r][2])
-		hitting.append(str(ares))
-		if warnings:
-			f.write(warnings[0])
-		else:
-			f.write('The following residues are removed because they are part of the active site: ')
-			for i in range(0, len(hitting)):
-				f.write(hitting[i]+' ')
+		if write:
+			f = open(filebase+'/completed/'+settings.FILENAME+'_mutations.txt','w')
+			for r in range(0, len(info)):
+			    if len(info[r]) is 15:
+			    	if str(info[r][2]) not in hitnum_list:
+			        	f.write(' '.join(info[r])+'\n')
+			    else:
+			    	if len(info[r]) is 15:
+			        	hitting.append(info[r][2])
+			hitting.append(str(ares))
+			if warnings:
+				f.write(warnings[0])
+			else:
+				f.write('The following residues are removed because they are part of the active site: ')
+				for i in range(0, len(hitting)):
+					f.write(hitting[i]+' ')

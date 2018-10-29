@@ -23,8 +23,8 @@ defaults = {
             'Logging' : "False",
             'Keep_Temp_Files' : "False",
             'Chain' : 'A',
-            'Angstrom' : "10",
-            'Residue' : "56",
+            'Angstrom' : None,
+            'Residue' : None,
             'PDB_Name' : None,
             'Blast_binary' : HOME+"/binaries/blastp",
             'CDHIT_binary' : HOME+"/binaries/cd-hit",
@@ -74,13 +74,13 @@ programstart = time.time()
 #If command line variables are specified, use those.
 if len(sys.argv) > 1:
     MainProgram=CF.CF(settings=args)
-    if args.PDB!="None":
+    if args.PDB!=None and args.RESIDUE!=None:
         PDBProgram=PDB.PDB(settings=args)
 #If no command line variables are specified, use config file and defaults
 else:
     print'reading settings from configfile ('+configfile+')'
     MainProgram=CF.CF(defaults=defaults,configfile=configfile)
-    if args.PDB!="None":
+    if args.PDB!=None and args.RESIDUE!=None:
         PDBProgram=PDB.PDB(defaults=defaults,configfile=configfile)
 programend = time.time()
 print '\nConsensus Finder Completed.'
