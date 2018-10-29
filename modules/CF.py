@@ -26,7 +26,7 @@ class CF(object):
         print'BLAST maximum e value: '+str(settings.BLASTEVALUE)
         print'threshold value for consensus: '+str(settings.CONSENSUSTHRESHOLD)
         print'ratio value for consensus: '+str(settings.RATIO)
-        print'dowload complete sequences from Entrez: '+str(settings.USECOMPLETESEQUENCES)
+        print'download complete sequences from Entrez: '+str(settings.USECOMPLETESEQUENCES)
         print'Clustal omega alignment itterations: '+str(settings.ALIGNMENTITERATIONS)
         print'threshold for removing redundant sequences: '+str(settings.MAXIMUMREDUNDANCYTHRESHOLD)
         warnings=[]
@@ -132,9 +132,32 @@ class checks(object):
         if not os.path.isfile(HOME+'/uploads/'+settings.FILENAME):
             cleanexit('No query file. File '+settings.FILENAME+' does not exist in uploads directory.')
         if not 1 == (len(list(Bio.SeqIO.parse(HOME+'/uploads/'+settings.FILENAME, "fasta")))):
-            message = "WARNING, MORE THAN ONE SEQUENCE FOUND IN "+settings.FILENAME+". Using only the first sequence. "
-            print message
-            self.warnings.append(message)
+            #print(list(Bio.SeqIO.parse(HOME+'/uploads/'+settings.FILENAME, "fasta")))
+            outputBase = '{}'.format(settings.PDB) # output.1.txt, output.2.txt, etc.
+            input = open(HOME+'/uploads/'+settings.FILENAME, 'r').read().replace('>','#>').split('#')
+            at = 1
+            for lines in range(1, len(input), 1):
+             # First, get the list slice
+                outputData = input[lines:lines+1]
+                # Now open the output file, join the new slice with newlines
+                # and write it out. Then close the file.
+                output = open(HOME+'/uploads/' + outputBase + '-' + str(at) + '.fasta', 'w+')
+                output.write('\n'.join(outputData))
+                output.seek(6)
+                chainLetter = output.read(1)
+                os.rename(HOME+'/uploads/'+ outputBase + '-' + str(at) + '.fasta',HOME+'/uploads/'+ outputBase + '-' + '{}'.format(chainLetter) + '.fasta')
+                output.close()
+                # Increment the counter
+            if settings.CHAIN:
+                settings.FILENAME=settings.PDB+'-{}'.format(settings.CHAIN)+'.fasta'
+                message = "Using Chain {}".format(settings.CHAIN)
+                print message
+            else:
+                message = "WARNING, MORE THAN ONE SEQUENCE FOUND IN "+settings.FILENAME+". Using only the first sequence."
+                print message
+                settings.FILENAME=settings.PDB+'-A'+'.fasta'
+                self.warnings.append(message)
+            
         #check to verify the file is a protein sequence
         protonly = ('F','L','I','M','V','S','P','Y','H','Q','K','D','E','W','R','f','l','i','m','v','s','p','y','h','q','k','d','e','w','r')
         hasprotonly=0
@@ -191,7 +214,7 @@ class runblast(object):
         numberofhits = len(self.versions)
         print('BLAST returned '+str(numberofhits)+' sequences.')        
         self.out=[] #initialize list for recording sequences
-        if settings.USECOMPLETESEQUENCES and numberofhits != 0: #if use complete sequences is true, dowload sequences from Entrez, otherwise just use returned BLAST sequences
+        if settings.USECOMPLETESEQUENCES is "True" and numberofhits != 0: #if use complete sequences is true, download sequences from Entrez, otherwise just use returned BLAST sequences
             start = time.time() #start timer for downloads
             print('\nDownloading '+str(numberofhits)+' complete sequences from NCBI.')
             Bio.Entrez.email=settings.EMAIL
@@ -218,7 +241,7 @@ class runblast(object):
                             print('Try at a less busy time of day, or request fewer sequences')
                             cleanexit(message='Network problem trying to communicate with Entrez. Try again at a less busy time of day, or request fewer sequences')
                     except AssertionError:
-                        print('Entrez faild to return all the sequences asked for on try %s of %s') % (tries+1,maxtries)
+                        print('Entrez failed to return all the sequences asked for on try %s of %s') % (tries+1,maxtries)
                         tries += 1
                         if tries <= maxtries:
                             time.sleep(3**tries) #delay to avoid flooding entrez server

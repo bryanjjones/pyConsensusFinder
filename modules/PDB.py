@@ -1,16 +1,16 @@
 import os
 import sys
 import csv
-import configparser
 import numpy as np
 import analyze
+import CF
 from Bio.PDB import *
 
-class PDB(object):
-    def __init__(self,defaults=None,configfile=None,settings=None,write=True):
-    	if settings is None:
-            settings=setsettings(defaults,configfile)
 
+class PDB(object):
+	def __init__(self,defaults=None,configfile=None,settings=None,write=True):
+		if settings is None:
+			settings=CF.setsettings(defaults,configfile)
 		##Make new directories
 		filebase=os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
 		outfilebase=filebase+'/completed'
@@ -41,16 +41,17 @@ class PDB(object):
 				print('please enter a distance greater than 2 angstroms')
 				sys.exit()
 			else:
-				pdb_name=settings.PDB
+				pdb_name=settings.PDB.lower()
 				achn=settings.CHAIN
 				ares=settings.RESIDUE
 				m=settings.ANG
 				try:
-					with open(filebase+'/completed/'+pdb_name+'.fasta.txt_mutations.txt', 'r') as consensus_file:
-				    for line in consensus_file:
-				        info.append(line.split())
+					with open(filebase+'/completed/'+settings.FILENAME+'_mutations.txt', 'r') as consensus_file:
+						for line in consensus_file:
+							info.append(line.split())
 				except:
 					warnings.append('no output from consensus finder, cannot trim anything')
+					print('no output from consensus finder, cannot trim anything')
 		except:
 			print('there is an error with the pdb or residue name provided')
 			sys.exit()
@@ -86,7 +87,8 @@ class PDB(object):
 		        heterocode.append(resid[1])
 		for i in range(0, len(heteroname), 10):
 		        reswriter.writerow(["["+str(heterocode[i])+"]"+" "+ " ".join([str(v) for v in heteroname[i:i+10]])])
-
+		if not rescode[0] <= ares <= rescode[len(resname)-1]:
+			CF.cleanexit("Residue number not in range. Enter residue between "+str(rescode[0])+" and "+str(rescode[len(resname)-1]))
 		##creating simple and detailed outputs
 		sf = open(os.path.join(outfilebase, "simple_output" + '.csv'), 'wt')
 		df = open(os.path.join(outfilebase, "detailed_output" + '.csv'), 'wt')
@@ -96,6 +98,8 @@ class PDB(object):
 			# Search with active site residue
 			residue1 = chain[ares]
 			res1id = residue1.get_id()
+		
+######## print the residue get id in case of error 
 			for atom in residue1:
 			    atomnamelist.append(atom.get_name())
 			    atomlist.append(atom.get_vector())
@@ -159,14 +163,9 @@ class PDB(object):
 		    	if len(info[r]) is 15:
 		        	hitting.append(info[r][2])
 		hitting.append(str(ares))
-		if not warnings:
+		if warnings:
 			f.write(warnings[0])
 		else:
 			f.write('The following residues are removed because they are part of the active site: ')
 			for i in range(0, len(hitting)):
-			    f.write(hitting[i]+' ')
-		#Closing files
-		f.close()
-		consensus_file.close() 
-
-
+				f.write(hitting[i]+' ')
