@@ -15,7 +15,7 @@ class PDB(object):
 		filebase=os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
 		outfilebase=filebase+'/completed'
 		if not os.path.exists(outfilebase):
-		    os.makedirs(outfilebase)
+			os.makedirs(outfilebase)
 
 		##Defining lists
 		sort1=[]
@@ -69,24 +69,24 @@ class PDB(object):
 		model = structure[0]
 		chain = model[achn]
 		for res in chain.get_residues():
-		    tags = res.get_full_id()
-		    if res.get_resname() != 'HOH' and tags[3][0] == " ":
-		        resname.append(res.get_resname())
-		        resid = res.get_id()
-		        rescode.append(resid[1])
+			tags = res.get_full_id()
+			if res.get_resname() != 'HOH' and tags[3][0] == " ":
+				 resname.append(res.get_resname())
+				 resid = res.get_id()
+				 rescode.append(resid[1])
 		reswriter.writerow(["A total of"+" "+str(len(resname))+" "+"residues in chain "+achn])
 		for i in range(0, len(resname), 10):
-		    reswriter.writerow(["["+str(rescode[i])+"]"+" "+" ".join([str(v) for v in resname[i:i+10]])])
+			reswriter.writerow(["["+str(rescode[i])+"]"+" "+" ".join([str(v) for v in resname[i:i+10]])])
 		reswriter.writerow(["-------------------------------------------------------------------"])
 		reswriter.writerow(["List of Heteroatoms: "])
 		for res in chain.get_residues():
-		    tags = res.get_full_id()
-		    if res.get_resname() != 'HOH' and tags[3][0] != " ":
-		        heteroname.append(res.get_resname())
-		        resid = res.get_id()
-		        heterocode.append(resid[1])
+			tags = res.get_full_id()
+			if res.get_resname() != 'HOH' and tags[3][0] != " ":
+				 heteroname.append(res.get_resname())
+				 resid = res.get_id()
+				 heterocode.append(resid[1])
 		for i in range(0, len(heteroname), 10):
-		        reswriter.writerow(["["+str(heterocode[i])+"]"+" "+ " ".join([str(v) for v in heteroname[i:i+10]])])
+				 reswriter.writerow(["["+str(heterocode[i])+"]"+" "+ " ".join([str(v) for v in heteroname[i:i+10]])])
 		if not rescode[0] <= ares <= rescode[len(resname)-1]:
 			CF.cleanexit("Residue number not in range. Enter residue between "+str(rescode[0])+" and "+str(rescode[len(resname)-1]))
 		##creating simple and detailed outputs
@@ -101,72 +101,72 @@ class PDB(object):
 		
 ######## print the residue get id in case of error 
 			for atom in residue1:
-			    atomnamelist.append(atom.get_name())
-			    atomlist.append(atom.get_vector())
+				atomnamelist.append(atom.get_name())
+				atomlist.append(atom.get_vector())
 			for i in range(0, len(atomlist)):
-			    for model in structure:
-			        for chain in model:
-			            for residue in chain:
-			                for atom in residue:
-			                    dist = np.linalg.norm(atom.get_vector() - atomlist[i])
-			                    if dist <= m:
-			                        resid1 = residue.get_id()
-			                        rdist = round(dist, 2)
-			                        if residue.get_resname() != 'HOH':
-			                            if resid1[1] != ares:
-			                                sort1.append((residue.get_resname(), resid1[1], atom.get_name(), rdist,
-			                                              residue1.get_resname(), res1id[1], atomnamelist[i]))
-			                                sort1 = sorted(sort1, key=lambda e: (e[3]))
+				for model in structure:
+					 for chain in model:
+							for residue in chain:
+								for atom in residue:
+									 dist = np.linalg.norm(atom.get_vector() - atomlist[i])
+									 if dist <= m:
+											resid1 = residue.get_id()
+											rdist = round(dist, 2)
+											if residue.get_resname() != 'HOH':
+												if resid1[1] != ares:
+													 sort1.append((residue.get_resname(), resid1[1], atom.get_name(), rdist,
+																		residue1.get_resname(), res1id[1], atomnamelist[i]))
+													 sort1 = sorted(sort1, key=lambda e: (e[3]))
 			writer2.writerow(['Residue Number: ' + str(ares)])
 			writer2.writerow(['Residue', 'Distance', 'Origin'])
 			for i in range(0, len(sort1)):
-			    writer2.writerow([sort1[i][0] + " " + str(sort1[i][1]) + " " + sort1[i][2], sort1[i][3],
-			                      sort1[i][4] + " " + str(sort1[i][5]) + " " + sort1[i][6]])
-			    if sort1[i][1] not in sort2:
-			        sort2.append(sort1[i][1])
-			        sort3.append(sort1[i])
-			    else:
-			        sort4.append(sort1[i])
-			        sort4 = sorted(sort4, key=lambda e: (e[1]))
+				writer2.writerow([sort1[i][0] + " " + str(sort1[i][1]) + " " + sort1[i][2], sort1[i][3],
+										sort1[i][4] + " " + str(sort1[i][5]) + " " + sort1[i][6]])
+				if sort1[i][1] not in sort2:
+					 sort2.append(sort1[i][1])
+					 sort3.append(sort1[i])
+				else:
+					 sort4.append(sort1[i])
+					 sort4 = sorted(sort4, key=lambda e: (e[1]))
 			writer.writerow(['Residue', ' ', ' ', 'Distance', 'Origin', ' ', ' ', 'Other Atoms'])
 			for i in range(0, len(sort3)):
-			    num = sort3[i][1]
-			    for r in range(0, len(sort4)):
-			        if sort4[r][1] == num:
-			            if sort4[r][2] not in sort5:
-			                if sort4[r][2] != sort3[i][2]:
-			                    sort5.append(sort4[r][2])
-			    writer.writerow(
-			        [sort3[i][0], str(sort3[i][1]), sort3[i][2], sort3[i][3], residue1.get_resname(), ares, sort3[i][6],
-			         ','.join(sort5)])
-			    del sort5[:]
+				num = sort3[i][1]
+				for r in range(0, len(sort4)):
+					 if sort4[r][1] == num:
+							if sort4[r][2] not in sort5:
+								if sort4[r][2] != sort3[i][2]:
+									 sort5.append(sort4[r][2])
+				writer.writerow(
+					 [sort3[i][0], str(sort3[i][1]), sort3[i][2], sort3[i][3], residue1.get_resname(), ares, sort3[i][6],
+						','.join(sort5)])
+				del sort5[:]
 		finally:
-		    sf.close()
-		    df.close()
+			sf.close()
+			df.close()
 
 		##trimming outputs
 		with open(outfilebase+'//'+'simple_output.csv', 'r') as pdbresults:
-		    for line in pdbresults:
-		        pinfo.append(line.split(','))
+			for line in pdbresults:
+				 pinfo.append(line.split(','))
 		#Generating search hit
 		for i in range(0, len(pinfo)):
-		    hitnum_list.append(pinfo[i][1])
-		hitnum_list.append(str(ares))
-
+			hitnum_list.append(pinfo[i][1])
+		hitnum_list.append(str(ares)) # all residues close to active site
 		#Writing output file
 		if write:
 			f = open(filebase+'/completed/'+settings.FILENAME+'_mutations.txt','w')
 			for r in range(0, len(info)):
-			    if len(info[r]) is 15:
-			    	if str(info[r][2]) not in hitnum_list:
-			        	f.write(' '.join(info[r])+'\n')
-			    else:
-			    	if len(info[r]) is 15:
-			        	hitting.append(info[r][2])
-			hitting.append(str(ares))
+				if len(info[r]) is 15: # identify lines that contain mutations from other lines, mutation lines have 15 entries
+					if str(info[r][2]) not in hitnum_list:
+					 	f.write(' '.join(info[r])+'\n')
+					else:
+						if len(info[r]) is 15: #Is this redundant? It looks like it is
+						 	hitting.append(info[r][2])
 			if warnings:
 				f.write(warnings[0])
 			else:
-				f.write('The following residues are removed because they are part of the active site: ')
+				f.write('The following residues are removed because they in or near the active site: ')
 				for i in range(0, len(hitting)):
+					if i !=0
+						f.write(',')
 					f.write(hitting[i]+' ')
