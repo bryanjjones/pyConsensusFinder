@@ -24,7 +24,6 @@ class PDB(object):
 		sort4=[] # "other" pairwise distances within specified distance to active site residue not included in sort2 or sort3 (i.e. not closest pairwise distance)
 		sort5=[] # temporary list of atom numbers for also too close atoms redefined for each close residue
 		info=[]
-		pinfo=[]
 		hitnum_list=[]
 		hitting=[]
 		atomlist=[]

@@ -52,18 +52,28 @@ parser.add_argument('--angstroms',metavar="X",dest="ANG",type=float,default=defa
 parser.add_argument('--BLAST',type=str,default=defaults['Blast_binary'],help=argparse.SUPPRESS)
 parser.add_argument('--CDHIT',type=str,default=defaults['CDHIT_binary'],help=argparse.SUPPRESS)
 parser.add_argument('--CLUSTAL',type=str,default=defaults['ClustalO_binary'],help=argparse.SUPPRESS)
+parser.add_argument('--suffix', type=str,default=None,help=argparse.SUPPRESS)
 args = parser.parse_args()
 
 if args.PDB and len(args.PDB) == 4:
     response = urllib2.urlopen('https://www.rcsb.org/pdb/download/downloadFastaFiles.do?structureIdList={}&compressionType=uncompressed'.format(args.PDB))
     html = response.read()
-    with open(HOME+'/uploads/{}.fasta'.format(args.PDB), "w") as f:
+    args.FILENAME='{}_{}.fasta'.format(args.PDB,args.suffix)
+    print "opening "+HOME+args.FILENAME
+    with open(HOME+'/uploads/'+args.FILENAME, "w") as f:
         f.write(html)
-    with open(HOME+'/uploads/{}.fasta'.format(args.PDB), "r") as f:
+    with open(HOME+'/uploads/'+args.FILENAME, "r") as f:
         for line in f:
             if line.strip('\n') in ("<head>"):
                 CF.cleanexit('PDB code not found.')   
-    args.FILENAME='{}.fasta'.format(args.PDB)
+
+    #with open(HOME+'/uploads/{}.fasta'.format(args.PDB), "w") as f:
+    #    f.write(html)
+    #with open(HOME+'/uploads/{}.fasta'.format(args.PDB), "r") as f:
+    #    for line in f:
+    #        if line.strip('\n') in ("<head>"):
+    #            CF.cleanexit('PDB code not found.')   
+    #args.FILENAME='{}.fasta'.format(args.PDB)
 
 if args.PDB!="None" and args.FILENAME!="None.fasta":
     message = 'Entered both a PDB code and a default file name. Using the PDB code, {}'.format(args.PDB)
