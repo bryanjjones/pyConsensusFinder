@@ -52,13 +52,13 @@ parser.add_argument('--angstroms',metavar="X",dest="ANG",type=float,default=defa
 parser.add_argument('--BLAST',type=str,default=defaults['Blast_binary'],help=argparse.SUPPRESS)
 parser.add_argument('--CDHIT',type=str,default=defaults['CDHIT_binary'],help=argparse.SUPPRESS)
 parser.add_argument('--CLUSTAL',type=str,default=defaults['ClustalO_binary'],help=argparse.SUPPRESS)
-parser.add_argument('--suffix', type=str,default=None,help=argparse.SUPPRESS)
+parser.add_argument('--prefix', type=str,default=None,help=argparse.SUPPRESS)
 args = parser.parse_args()
 
 if args.PDB and len(args.PDB) == 4:
     response = urllib2.urlopen('https://www.rcsb.org/pdb/download/downloadFastaFiles.do?structureIdList={}&compressionType=uncompressed'.format(args.PDB))
     html = response.read()
-    args.FILENAME='{}_{}.fasta'.format(args.PDB,args.suffix)
+    args.FILENAME='{}_{}.fasta'.format(args.prefix,args.PDB)
     print "opening "+HOME+args.FILENAME
     with open(HOME+'/uploads/'+args.FILENAME, "w") as f:
         f.write(html)

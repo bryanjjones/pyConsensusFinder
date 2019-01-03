@@ -274,7 +274,7 @@ class runblast(object):
             except:
                 print('Did not get the expected '+str(numberofhits)+' sequences from Entrez.')
                 print('Continuing with only '+str(len(self.out))+' sequences.')
-                self.warnings.append('WARNING! Entrez only returned '+len(self.out)+' sequences of '+str(numberofhits)+' requested. Results based on '+len(self.out)+' sequences.')
+                self.warnings.append('WARNING! Entrez only returned '+str(len(self.out))+' sequences of '+str(numberofhits)+' requested. Results based on '+str(len(self.out))+' sequences.')
             end = time.time()
             print('Downloading sequences took '+str(int(end - start))+' seconds.')
         else:
