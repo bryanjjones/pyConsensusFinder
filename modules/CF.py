@@ -179,6 +179,8 @@ class runblast(object):
     def __init__(self, settings, filename=None):
         RUNBLAST = settings.BLAST+' -db nr -query '+HOME+'/uploads/'+settings.FILENAME+' -evalue '+str(settings.BLASTEVALUE)+' -max_target_seqs '+str(settings.MAXIMUMSEQUENCES)+' -outfmt "6 sacc sseq pident" -remote' 
         print "\nBegining BLAST search of NCBI. This will take a few minutes."
+        if settings.VERBOSE:
+            print RUNBLAST
         start = time.time()
         self.warnings=[]
         command = runbin.Command(RUNBLAST)

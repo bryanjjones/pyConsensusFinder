@@ -44,6 +44,7 @@ parser.add_argument('-i', '--iter',metavar='X',dest='ALIGNMENTITERATIONS',type=i
 parser.add_argument('-r', '--redundancy',metavar='0.X',dest='MAXIMUMREDUNDANCYTHRESHOLD',type=float,default=defaults['Maximum_Redundancy_Threshold'],help='Maximum identity for redundant sequence cutoff by CD-HIT')
 parser.add_argument('-k', '--keeptemp',dest='KEEPTEMPFILES',action='store_true',default=defaults['Keep_Temp_Files'],help='Keep temporary files for troubleshooting')
 parser.add_argument('-l', '--logging',dest='LOGGING',action='store_true',default=defaults['Logging'],help='Turn on logging for troubleshooting')
+parser.add_argument('-v', '--verbose',dest="VERBOSE", action='store_true',default=False,help='Verbose output')
 #options commented out for future use 
 parser.add_argument('--chain',metavar="X",dest="CHAIN",type=str,default=defaults['Chain'],help="Protein chain from PDB")
 parser.add_argument('--residue',metavar="##",dest="RESIDUE",type=int,default=defaults['Residue'],help="Residue number from PDB")
@@ -75,10 +76,9 @@ if args.PDB and len(args.PDB) == 4:
     #            CF.cleanexit('PDB code not found.')   
     #args.FILENAME='{}.fasta'.format(args.PDB)
 
-if args.PDB!=None and args.FILENAME!="None.fasta":
+if args.PDB is not None and args.FILENAME!= "None.fasta":
     message = 'Entered both a PDB code and a default file name. Using the PDB code, {}'.format(args.PDB)
     print (message)
-
 
 programstart = time.time()
 #If command line variables are specified, use those.
