@@ -52,7 +52,7 @@ def trimmer(AAA, sequenceids=None, filename=None):
 #Returns an array of amino acid counts given an array of aligned sequences with each element a single position.
 #If given a filename, counts array is exported as a csv.
 def aacounts(AAA, filename=None): 
-    COUNTS = np.zeros([22, len(AAA[0,:])],dtype=object) #makes array the length of the alingment with 22 rows (20AAs + "-" + "other")
+    COUNTS = np.zeros([23, len(AAA[0,:])],dtype=object) #makes array the length of the alingment with 22 rows (20AAs + "-" + "other")
     for index in range(len(AAA[0,:])): # for each position along the alingment, count occourances of each AA
         COUNTS[0, index] = index+1
         COUNTS[1,index]=AAA[:,index].tolist().count("G")
