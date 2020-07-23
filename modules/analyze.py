@@ -6,7 +6,7 @@ import Bio.Seq
  
 #Array of single letter amino acid cods for use in arrays. 
 IDS = np.zeros([23,1],dtype=object)
-IDS[:,0]=['AA number','G', 'P', 'A', 'V', 'L', 'I', 'M', 'C', 'F', 'Y', 'W', 'H', 'K', 'R', 'Q', 'N', 'E', 'D', 'S', 'T', '-', 'other']
+IDS[:,0]=['G', 'P', 'A', 'V', 'L', 'I', 'M', 'C', 'F', 'Y', 'W', 'H', 'K', 'R', 'Q', 'N', 'E', 'D', 'S', 'T', '-', 'other']
 #make a list of data types for suggested mutation tuples wt= wild type (given) residue, res=residue number, sug= suggested mutation (consensus residue), freq= frequency of consensus residue (0-1), wtfreq= frequency of wild type (given) residue (0-1)  
 TYPES = [('wt', 'S1'), ('res', int), ('sug', 'S1'),('freq', float),('wtfreq', float)] 
 class res_to_change(object):
@@ -117,7 +117,7 @@ def aafrequencies(COUNTS, filename=None):
  
     #IDS=aaletters()
     IDFREQS = np.hstack((IDS,FREQS)) #make list with names and AA frequencies
-    header=list(range(len(FREQS[0,:])))
+    header=list(range(1,len(FREQS[0,:]+1)))
     header=["AA number"]+header
     IDFREQS = np.vstack((header,IDFREQS))
     if filename:
