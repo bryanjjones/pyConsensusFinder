@@ -75,7 +75,7 @@ if args.PDB and len(args.PDB) == 4:
     #            CF.cleanexit('PDB code not found.')   
     #args.FILENAME='{}.fasta'.format(args.PDB)
 
-if args.PDB!="None" and args.FILENAME!="None.fasta":
+if args.PDB!=None and args.FILENAME!="None.fasta":
     message = 'Entered both a PDB code and a default file name. Using the PDB code, {}'.format(args.PDB)
     print (message)
 
