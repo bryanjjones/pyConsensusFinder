@@ -1,3 +1,8 @@
-processing/
-uploads/
-completed/
+processing/*
+uploads/*
+completed/*
+/.idea/.gitignore
+/.idea/modules.xml
+/.idea/inspectionProfiles/profiles_settings.xml
+/.idea/pyConsensusFinder.iml
+/.idea/vcs.xml
