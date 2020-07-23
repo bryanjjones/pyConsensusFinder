@@ -54,30 +54,32 @@ def trimmer(AAA, sequenceids=None, filename=None):
 def aacounts(AAA, filename=None): 
     COUNTS = np.zeros([23, len(AAA[0,:])],dtype=object) #makes array the length of the alingment with 22 rows (20AAs + "-" + "other")
     for index in range(len(AAA[0,:])): # for each position along the alingment, count occourances of each AA
-        COUNTS[0, index] = index+1
-        COUNTS[1,index]=AAA[:,index].tolist().count("G")
-        COUNTS[2,index]=AAA[:,index].tolist().count("P")
-        COUNTS[3,index]=AAA[:,index].tolist().count("A")
-        COUNTS[4,index]=AAA[:,index].tolist().count("V")
-        COUNTS[5,index]=AAA[:,index].tolist().count("L")
-        COUNTS[6,index]=AAA[:,index].tolist().count("I")
-        COUNTS[7,index]=AAA[:,index].tolist().count("M")
-        COUNTS[8,index]=AAA[:,index].tolist().count("C")
-        COUNTS[9,index]=AAA[:,index].tolist().count("F")
-        COUNTS[10,index]=AAA[:,index].tolist().count("Y")
-        COUNTS[11,index]=AAA[:,index].tolist().count("W")
-        COUNTS[12,index]=AAA[:,index].tolist().count("H")
-        COUNTS[13,index]=AAA[:,index].tolist().count("K")
-        COUNTS[14,index]=AAA[:,index].tolist().count("R")
-        COUNTS[15,index]=AAA[:,index].tolist().count("Q")
-        COUNTS[16,index]=AAA[:,index].tolist().count("N")
-        COUNTS[17,index]=AAA[:,index].tolist().count("E")
-        COUNTS[18,index]=AAA[:,index].tolist().count("D")
-        COUNTS[19,index]=AAA[:,index].tolist().count("S")
-        COUNTS[20,index]=AAA[:,index].tolist().count("T")
-        COUNTS[21,index]=AAA[:,index].tolist().count("-") #empty spaces
-        COUNTS[22,index]=(len(AAA[:,index]) - sum(COUNTS[:,index].tolist())) #other, not counted above
+        COUNTS[0,index]=AAA[:,index].tolist().count("G")
+        COUNTS[1,index]=AAA[:,index].tolist().count("P")
+        COUNTS[2,index]=AAA[:,index].tolist().count("A")
+        COUNTS[3,index]=AAA[:,index].tolist().count("V")
+        COUNTS[4,index]=AAA[:,index].tolist().count("L")
+        COUNTS[5,index]=AAA[:,index].tolist().count("I")
+        COUNTS[6,index]=AAA[:,index].tolist().count("M")
+        COUNTS[7,index]=AAA[:,index].tolist().count("C")
+        COUNTS[8,index]=AAA[:,index].tolist().count("F")
+        COUNTS[9,index]=AAA[:,index].tolist().count("Y")
+        COUNTS[10,index]=AAA[:,index].tolist().count("W")
+        COUNTS[11,index]=AAA[:,index].tolist().count("H")
+        COUNTS[12,index]=AAA[:,index].tolist().count("K")
+        COUNTS[13,index]=AAA[:,index].tolist().count("R")
+        COUNTS[14,index]=AAA[:,index].tolist().count("Q")
+        COUNTS[15,index]=AAA[:,index].tolist().count("N")
+        COUNTS[16,index]=AAA[:,index].tolist().count("E")
+        COUNTS[17,index]=AAA[:,index].tolist().count("D")
+        COUNTS[18,index]=AAA[:,index].tolist().count("S")
+        COUNTS[19,index]=AAA[:,index].tolist().count("T")
+        COUNTS[20,index]=AAA[:,index].tolist().count("-") #empty spaces
+        COUNTS[21,index]=(len(AAA[:,index]) - sum(COUNTS[:,index].tolist())) #other, not counted above
     IDCOUNTS = np.hstack((IDS,COUNTS)) #make list with AA counts and names of AAs
+    header=list(range(len(AAA[0,:])))
+    header=["AA number"]+header
+    IDCOUNTS = np.vstack((header,IDCOUNTS))
     if filename:
         np.savetxt((filename),IDCOUNTS,delimiter=",",fmt="%s") #save file with AA names and counts
     return COUNTS
@@ -90,32 +92,34 @@ def aafrequencies(COUNTS, filename=None):
     FREQS = np.zeros_like(COUNTS) #make an array for calculating frequencies of each AA
     FREQS = np.float64(FREQS) #it needs to be numbers
     for index in range(len(FREQS[0,:])): # calculate the frequencey of each AA as [occurrences]/[occurrences of all AAs], "-" and "other" not counted in total
-        FREQS[0, index] = index
-        FREQS[1,index]=np.float64(COUNTS[0,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[2,index]=np.float64(COUNTS[1,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[3,index]=np.float64(COUNTS[2,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[4,index]=np.float64(COUNTS[3,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[5,index]=np.float64(COUNTS[4,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[6,index]=np.float64(COUNTS[5,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[7,index]=np.float64(COUNTS[6,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[8,index]=np.float64(COUNTS[7,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[9,index]=np.float64(COUNTS[8,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[10,index]=np.float64(COUNTS[9,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[11,index]=np.float64(COUNTS[10,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[12,index]=np.float64(COUNTS[11,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[13,index]=np.float64(COUNTS[12,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[14,index]=np.float64(COUNTS[13,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[15,index]=np.float64(COUNTS[14,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[16,index]=np.float64(COUNTS[15,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[17,index]=np.float64(COUNTS[16,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[18,index]=np.float64(COUNTS[17,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[19,index]=np.float64(COUNTS[18,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[10,index]=np.float64(COUNTS[19,index])/sum(np.float64(COUNTS[:20,index]))
-        FREQS[21,index]=np.float64(COUNTS[20,index])/sum(np.float64(COUNTS[:,index])) #frequency of gaps "-" as fraction of all seqs
-        FREQS[22,index]=np.float64(COUNTS[21,index])/sum(np.float64(COUNTS[:,index])) #frequency of gaps "other" as fraction of all seqs
+        FREQS[0,index]=np.float64(COUNTS[0,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[1,index]=np.float64(COUNTS[1,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[2,index]=np.float64(COUNTS[2,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[3,index]=np.float64(COUNTS[3,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[4,index]=np.float64(COUNTS[4,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[5,index]=np.float64(COUNTS[5,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[6,index]=np.float64(COUNTS[6,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[7,index]=np.float64(COUNTS[7,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[8,index]=np.float64(COUNTS[8,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[9,index]=np.float64(COUNTS[9,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[10,index]=np.float64(COUNTS[10,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[11,index]=np.float64(COUNTS[11,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[12,index]=np.float64(COUNTS[12,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[13,index]=np.float64(COUNTS[13,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[14,index]=np.float64(COUNTS[14,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[15,index]=np.float64(COUNTS[15,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[16,index]=np.float64(COUNTS[16,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[17,index]=np.float64(COUNTS[17,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[18,index]=np.float64(COUNTS[18,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[19,index]=np.float64(COUNTS[19,index])/sum(np.float64(COUNTS[:20,index]))
+        FREQS[20,index]=np.float64(COUNTS[20,index])/sum(np.float64(COUNTS[:,index])) #frequency of gaps "-" as fraction of all seqs
+        FREQS[21,index]=np.float64(COUNTS[21,index])/sum(np.float64(COUNTS[:,index])) #frequency of gaps "other" as fraction of all seqs
  
     #IDS=aaletters()
     IDFREQS = np.hstack((IDS,FREQS)) #make list with names and AA frequencies
+    header=list(range(len(AAA[0,:])))
+    header=["AA number"]+header
+    IDFREQS = np.vstack((header,IDFREQS))
     if filename:
         np.savetxt((filename),IDFREQS,delimiter=",",fmt="%s") #save file with AA names and frequencies
     return FREQS
