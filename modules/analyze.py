@@ -117,7 +117,7 @@ def aafrequencies(COUNTS, filename=None):
  
     #IDS=aaletters()
     IDFREQS = np.hstack((IDS,FREQS)) #make list with names and AA frequencies
-    header=list(range(1,len(FREQS[0,:]+1)))
+    header=list(range(1,len(FREQS[0,:])))
     header=["AA number"]+header
     IDFREQS = np.vstack((header,IDFREQS))
     if filename:
