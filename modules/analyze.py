@@ -77,7 +77,7 @@ def aacounts(AAA, filename=None):
         COUNTS[20,index]=AAA[:,index].tolist().count("-") #empty spaces
         COUNTS[21,index]=(len(AAA[:,index]) - sum(COUNTS[:,index].tolist())) #other, not counted above
     IDCOUNTS = np.hstack((IDS,COUNTS)) #make list with AA counts and names of AAs
-    header=list(1,range(len(AAA[0,:])))
+    header=list(range(1,len(AAA[0,:])))
     header=["AA number"]+header
     IDCOUNTS = np.vstack((header,IDCOUNTS))
     if filename:
