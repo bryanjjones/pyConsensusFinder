@@ -154,7 +154,7 @@ def ratioconsensus(query, FREQS, ratio):
             consensusfreq = float(FREQS[(aalist.index(consensus)),index])
             if (ratio * wtfreq) < consensusfreq: #if the consensus of a residue is greater than the threshold
                 print "Residue number " + str(int(index) + 1)
-                print str(int(100*consensusfreq)) + '% is at least ' + str(ratio) + ' times greater than ' + str(int(100*wtfreq)) + '%'
+                print str(int(round(100*consensusfreq))) + '% is at least ' + str(ratio) + ' times greater than ' + str(int(round(100*wtfreq))) + '%'
                 thissuggestion=res_to_change(wtaa,(index+1), consensus, consensusfreq, wtfreq)
                 mutations.append(thissuggestion)
     return mutations
@@ -196,7 +196,7 @@ def formatmutations(mutations_with_dups):
             SUGGESTED_MUTATIONS.append("No mutations found. Try reducing the ConsensusRatio or ConsensusThreshold. You could also try changing the BLAST parameters to adjust the number of sequences being returned (MaximumSequences and BlastEValue).")
     else:
         for i in mutations: #for each suggested mutation
-            SUGGESTED_MUTATIONS.append("Change " + i.wt + " " + str(i.res) + " to " + i.sug + " (" + str(int(round(100*i.freq))) + "% of similar proteins have " + i.sug +", only " + str(round(int(100*i.wtfreq))) + "% have "+ i.wt + ")" ) #add new suggestion on to any existing "SUGGESTED_MUTATIONS"
+            SUGGESTED_MUTATIONS.append("Change " + i.wt + " " + str(i.res) + " to " + i.sug + " (" + str(int(round(100*i.freq))) + "% of similar proteins have " + i.sug +", only " + str(int(round(100*i.wtfreq))) + "% have "+ i.wt + ")" ) #add new suggestion on to any existing "SUGGESTED_MUTATIONS"
     return mutations, SUGGESTED_MUTATIONS
 
 #define mutation list based on settings attributes of RATIO and/or CONSESUSTHRESHOLD and using trimmed alignment of sequences to identify query sequence (first sequence in alignment), and array of amino acid frequencies matching amino acid positions.
